@@ -7,5 +7,10 @@ import androidx.room.PrimaryKey
 data class Run(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val startTime: Long,
-    val endTime: Long? = null
+    val endTime: Long? = null,
+    val totalDistanceMeters: Float = 0f,
+    val elevationGainMeters: Float = 0f,
+    val elevationLossMeters: Float = 0f,
+    val avgHeartRate: Int? = null,
+    val maxHeartRate: Int? = null
 )

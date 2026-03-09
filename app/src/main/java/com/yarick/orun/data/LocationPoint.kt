@@ -14,5 +14,7 @@ data class LocationPoint(
     val latitude: Double,
     val longitude: Double,
     val altitude: Double,
-    val timestamp: Long
+    val timestamp: Long,
+    val heartRate: Int? = null,
+    val cadence: Int? = null
 )

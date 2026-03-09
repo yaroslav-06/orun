@@ -5,28 +5,67 @@ abstract class Service <<Android>>
 abstract class RoomDatabase <<Room>>
 
 class MainActivity {
-    -isTracking : Boolean
     -fab : FloatingActionButton
     -scope : CoroutineScope
+    -mainScope : CoroutineScope
+    -observeJob : Job
+    -listJob : Job
+    -adapter : RunAdapter
     +onCreate(savedInstanceState : Bundle?)
+    +onResume()
+    +onPause()
     -startRun()
-    -stopRun()
+    -updateFab(stats : RunStats)
     -createNotificationChannel()
+}
+
+class RunDetailActivity {
+    -scope : CoroutineScope
+    +onCreate(savedInstanceState : Bundle?)
+    +onSupportNavigateUp() : Boolean
+    +onDestroy()
+}
+
+class RunAdapter {
+    -runs : List<Run>
+    -onClick : (Run) -> Unit
+    +submitList(newRuns : List<Run>)
+    +onCreateViewHolder(...) : ViewHolder
+    +onBindViewHolder(...)
+    +getItemCount() : Int
+    -formatDate(ms : Long) : String
+    -formatDuration(startMs : Long, endMs : Long) : String
+    -formatPace(distanceM : Float, durationMs : Long) : String
+}
+
+class RunStatsActivity {
+    -scope : CoroutineScope
+    -frozenDurationSec : Long?
+    +onCreate(savedInstanceState : Bundle?)
+    -formatDuration(totalSec : Long) : String
+    -formatPace(secPerKm : Float) : String
 }
 
 class LocationTrackingService {
     +{static} ACTION_START : String
     +{static} ACTION_STOP : String
     +{static} EXTRA_RUN_ID : String
+    +{static} EXTRA_START_TIME : String
     +{static} CHANNEL_ID : String
+    +{static} stats : MutableStateFlow<RunStats>
     -fusedLocationClient : FusedLocationProviderClient
     -scope : CoroutineScope
     -runId : Long
-    -lastSavedLocation : Location
-    -pointCount : Int
+    -lastSavedLocation : Location?
+    -lastAltitude : Double?
+    -distanceMeters : Float
+    -elevationGainMeters : Float
+    -elevationLossMeters : Float
+    -paceBuffer : ArrayDeque<Pair<Long,Float>>
     +onStartCommand(intent : Intent, flags : Int, startId : Int) : Int
     -startLocationUpdates()
     -processLocation(location : Location)
+    -calculateCurrentPace() : Float
     -stopLocationUpdates()
     -buildNotification() : Notification
 }
@@ -34,18 +73,27 @@ class LocationTrackingService {
 class RunDatabase <<@Database>> {
     +{static} getInstance(context : Context) : RunDatabase
     +runDao() : RunDao
+    -{static} MIGRATION_1_2 : Migration
 }
 
 interface RunDao <<@Dao>> {
     +insertRun(run : Run) : Long
     +insertPoint(point : LocationPoint)
+    +updateRun(run : Run)
     +getPointsForRun(runId : Long) : List<LocationPoint>
+    +getAllFinishedRuns() : Flow<List<Run>>
+    +getRunById(id : Long) : Run?
 }
 
 class Run <<@Entity: runs>> {
     +id : Long
     +startTime : Long
-    +endTime : Long
+    +endTime : Long?
+    +totalDistanceMeters : Float
+    +elevationGainMeters : Float
+    +elevationLossMeters : Float
+    +avgHeartRate : Int?
+    +maxHeartRate : Int?
 }
 
 class LocationPoint <<@Entity: location_points>> {
@@ -55,9 +103,23 @@ class LocationPoint <<@Entity: location_points>> {
     +longitude : Double
     +altitude : Double
     +timestamp : Long
+    +heartRate : Int?
+    +cadence : Int?
+}
+
+class RunStats <<data class>> {
+    +distanceMeters : Float
+    +startTime : Long
+    +elevationGainMeters : Float
+    +elevationLossMeters : Float
+    +currentPaceSecPerKm : Float
+    +heartRate : Int?
+    +isFinished : Boolean
 }
 
 MainActivity --|> AppCompatActivity
+RunStatsActivity --|> AppCompatActivity
+RunDetailActivity --|> AppCompatActivity
 LocationTrackingService --|> Service
 RunDatabase --|> RoomDatabase
 
@@ -68,9 +130,22 @@ LocationPoint "many" --> "1" Run : runId FK
 
 MainActivity ..> RunDatabase : uses
 MainActivity ..> Run : creates
-MainActivity ..> LocationTrackingService : starts/stops
+MainActivity ..> LocationTrackingService : starts
+MainActivity ..> RunStatsActivity : opens
+MainActivity ..> RunDetailActivity : opens
+MainActivity ..> RunStats : observes
+MainActivity *-- RunAdapter : uses
+
+RunDetailActivity ..> RunDatabase : uses
+RunDetailActivity ..> Run : displays
+RunAdapter ..> Run : displays
+
+RunStatsActivity ..> LocationTrackingService : sends ACTION_STOP
+RunStatsActivity ..> RunStats : collects
 
 LocationTrackingService ..> RunDatabase : uses
 LocationTrackingService ..> LocationPoint : creates & saves
+LocationTrackingService ..> Run : updates on stop
+LocationTrackingService *-- RunStats : emits via StateFlow
 
 @enduml
