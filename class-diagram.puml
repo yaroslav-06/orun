@@ -1,5 +1,6 @@
 @startuml
 
+abstract class Application <<Android>>
 abstract class AppCompatActivity <<Android>>
 abstract class Service <<Android>>
 abstract class RoomDatabase <<Room>>
@@ -117,6 +118,11 @@ class RunStats <<data class>> {
     +isFinished : Boolean
 }
 
+class OrunApp {
+    +onCreate()
+}
+
+OrunApp --|> Application
 MainActivity --|> AppCompatActivity
 RunStatsActivity --|> AppCompatActivity
 RunDetailActivity --|> AppCompatActivity
