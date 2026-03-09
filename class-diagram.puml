@@ -1,0 +1,76 @@
+@startuml
+
+abstract class AppCompatActivity <<Android>>
+abstract class Service <<Android>>
+abstract class RoomDatabase <<Room>>
+
+class MainActivity {
+    -isTracking : Boolean
+    -fab : FloatingActionButton
+    -scope : CoroutineScope
+    +onCreate(savedInstanceState : Bundle?)
+    -startRun()
+    -stopRun()
+    -createNotificationChannel()
+}
+
+class LocationTrackingService {
+    +{static} ACTION_START : String
+    +{static} ACTION_STOP : String
+    +{static} EXTRA_RUN_ID : String
+    +{static} CHANNEL_ID : String
+    -fusedLocationClient : FusedLocationProviderClient
+    -scope : CoroutineScope
+    -runId : Long
+    -lastSavedLocation : Location
+    -pointCount : Int
+    +onStartCommand(intent : Intent, flags : Int, startId : Int) : Int
+    -startLocationUpdates()
+    -processLocation(location : Location)
+    -stopLocationUpdates()
+    -buildNotification() : Notification
+}
+
+class RunDatabase <<@Database>> {
+    +{static} getInstance(context : Context) : RunDatabase
+    +runDao() : RunDao
+}
+
+interface RunDao <<@Dao>> {
+    +insertRun(run : Run) : Long
+    +insertPoint(point : LocationPoint)
+    +getPointsForRun(runId : Long) : List<LocationPoint>
+}
+
+class Run <<@Entity: runs>> {
+    +id : Long
+    +startTime : Long
+    +endTime : Long
+}
+
+class LocationPoint <<@Entity: location_points>> {
+    +id : Long
+    +runId : Long
+    +latitude : Double
+    +longitude : Double
+    +altitude : Double
+    +timestamp : Long
+}
+
+MainActivity --|> AppCompatActivity
+LocationTrackingService --|> Service
+RunDatabase --|> RoomDatabase
+
+RunDatabase *-- RunDao : contains
+RunDao ..> Run : operates on
+RunDao ..> LocationPoint : operates on
+LocationPoint "many" --> "1" Run : runId FK
+
+MainActivity ..> RunDatabase : uses
+MainActivity ..> Run : creates
+MainActivity ..> LocationTrackingService : starts/stops
+
+LocationTrackingService ..> RunDatabase : uses
+LocationTrackingService ..> LocationPoint : creates & saves
+
+@enduml
