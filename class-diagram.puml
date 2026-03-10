@@ -25,6 +25,7 @@ class RunDetailActivity {
     -runId : Long
     +btnDeleteRun : Button
     +onCreate(savedInstanceState : Bundle?)
+    -computeSplits(points : List<LocationPoint>, metric : Boolean) : List<Split>
     +onSupportNavigateUp() : Boolean
     +onDestroy()
 }
@@ -143,11 +144,21 @@ class SettingsActivity {
     +onSupportNavigateUp() : Boolean
 }
 
+class SplitsView {
+    +{static} Split : data class (index : Int, secPerUnit : Float)
+    -splits : List<Split>
+    -metric : Boolean
+    +setSplits(splits : List<Split>, metric : Boolean)
+    +onMeasure(...)
+    +onDraw(canvas : Canvas)
+}
+
 OrunApp --|> Application
 MainActivity --|> AppCompatActivity
 RunStatsActivity --|> AppCompatActivity
 RunDetailActivity --|> AppCompatActivity
 SettingsActivity --|> AppCompatActivity
+SplitsView --|> View
 LocationTrackingService --|> Service
 RunDatabase --|> RoomDatabase
 
@@ -167,6 +178,8 @@ MainActivity *-- RunAdapter : uses
 
 RunDetailActivity ..> RunDatabase : uses
 RunDetailActivity ..> Run : displays
+RunDetailActivity ..> LocationPoint : computes splits from
+RunDetailActivity *-- SplitsView : uses
 RunAdapter ..> Run : displays
 
 RunStatsActivity ..> LocationTrackingService : sends ACTION_STOP

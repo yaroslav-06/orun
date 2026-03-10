@@ -1,74 +1,95 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:padding="24dp"
     android:fitsSystemWindows="true">
 
-    <TextView
-        android:id="@+id/tvDetailDate"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:textAppearance="?attr/textAppearanceTitleMedium"
-        android:layout_marginBottom="16dp" />
-
-    <TextView
-        android:id="@+id/tvDetailDistance"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:textAppearance="?attr/textAppearanceHeadlineMedium"
-        android:layout_marginBottom="8dp" />
-
-    <TextView
-        android:id="@+id/tvDetailDuration"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:textAppearance="?attr/textAppearanceTitleLarge"
-        android:layout_marginBottom="4dp" />
-
-    <TextView
-        android:id="@+id/tvDetailPace"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:textAppearance="?attr/textAppearanceBodyLarge"
-        android:layout_marginBottom="16dp" />
-
-    <TextView
-        android:id="@+id/tvDetailElevGain"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:textAppearance="?attr/textAppearanceBodyMedium"
-        android:layout_marginBottom="4dp" />
-
-    <TextView
-        android:id="@+id/tvDetailElevLoss"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:textAppearance="?attr/textAppearanceBodyMedium"
-        android:layout_marginBottom="16dp" />
-
-    <TextView
-        android:id="@+id/tvDetailAvgHR"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:textAppearance="?attr/textAppearanceBodyMedium"
-        android:layout_marginBottom="4dp"
-        android:visibility="gone" />
-
-    <TextView
-        android:id="@+id/tvDetailMaxHR"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:textAppearance="?attr/textAppearanceBodyMedium"
-        android:visibility="gone" />
-
-    <Button
-        android:id="@+id/btnDeleteRun"
-        style="@style/Widget.Material3.Button.TonalButton"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="32dp"
-        android:text="Delete Run" />
+        android:orientation="vertical"
+        android:padding="24dp">
 
-</LinearLayout>
+        <TextView
+            android:id="@+id/tvDetailDate"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="?attr/textAppearanceTitleMedium"
+            android:layout_marginBottom="16dp" />
+
+        <TextView
+            android:id="@+id/tvDetailDistance"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="?attr/textAppearanceHeadlineMedium"
+            android:layout_marginBottom="8dp" />
+
+        <TextView
+            android:id="@+id/tvDetailDuration"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="?attr/textAppearanceTitleLarge"
+            android:layout_marginBottom="4dp" />
+
+        <TextView
+            android:id="@+id/tvDetailPace"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="?attr/textAppearanceBodyLarge"
+            android:layout_marginBottom="16dp" />
+
+        <TextView
+            android:id="@+id/tvDetailElevGain"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="?attr/textAppearanceBodyMedium"
+            android:layout_marginBottom="4dp" />
+
+        <TextView
+            android:id="@+id/tvDetailElevLoss"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="?attr/textAppearanceBodyMedium"
+            android:layout_marginBottom="16dp" />
+
+        <TextView
+            android:id="@+id/tvDetailAvgHR"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="?attr/textAppearanceBodyMedium"
+            android:layout_marginBottom="4dp"
+            android:visibility="gone" />
+
+        <TextView
+            android:id="@+id/tvDetailMaxHR"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="?attr/textAppearanceBodyMedium"
+            android:visibility="gone" />
+
+        <TextView
+            android:id="@+id/tvSplitsHeader"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Splits"
+            android:textAppearance="?attr/textAppearanceTitleMedium"
+            android:layout_marginTop="24dp"
+            android:layout_marginBottom="8dp"
+            android:visibility="gone" />
+
+        <com.yarick.orun.SplitsView
+            android:id="@+id/splitsView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+
+        <Button
+            android:id="@+id/btnDeleteRun"
+            style="@style/Widget.Material3.Button.TonalButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="32dp"
+            android:text="Delete Run" />
+
+    </LinearLayout>
+
+</ScrollView>

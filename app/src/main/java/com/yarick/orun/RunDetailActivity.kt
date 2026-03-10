@@ -1,11 +1,13 @@
 package com.yarick.orun
 
+import android.location.Location
 import android.os.Bundle
 import android.util.Log
 import android.view.View
 import android.widget.Button
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import com.yarick.orun.data.LocationPoint
 import com.yarick.orun.data.RunDatabase
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -48,8 +50,10 @@ class RunDetailActivity : AppCompatActivity() {
         }
 
         scope.launch {
+            val dao = RunDatabase.getInstance(this@RunDetailActivity).runDao()
+
             val run = withContext(Dispatchers.IO) {
-                RunDatabase.getInstance(this@RunDetailActivity).runDao().getRunById(runId)
+                dao.getRunById(runId)
             } ?: run { finish(); return@launch }
 
             val endTime = run.endTime ?: run.startTime
@@ -82,8 +86,65 @@ class RunDetailActivity : AppCompatActivity() {
                 tv.visibility = View.VISIBLE
             }
 
+            // Splits
+            val points = withContext(Dispatchers.IO) { dao.getPointsForRun(runId) }
+            val splits = computeSplits(points, metric)
+            if (splits.isNotEmpty()) {
+                findViewById<TextView>(R.id.tvSplitsHeader).visibility = View.VISIBLE
+                findViewById<SplitsView>(R.id.splitsView).setSplits(splits, metric)
+            }
+
             btnDelete.isEnabled = true
         }
+    }
+
+    private fun computeSplits(points: List<LocationPoint>, metric: Boolean): List<SplitsView.Split> {
+        val unitMeters = if (metric) 1000f else 1609.344f
+        if (points.size < 2) return emptyList()
+
+        val splits = mutableListOf<SplitsView.Split>()
+        var splitIndex = 1
+        var distSinceLastSplit = 0f
+        var splitStartTime = points.first().timestamp
+        var prev = points.first()
+
+        for (point in points.drop(1)) {
+            val distResult = FloatArray(1)
+            Location.distanceBetween(
+                prev.latitude, prev.longitude,
+                point.latitude, point.longitude,
+                distResult
+            )
+            val segDist = distResult[0]
+            val segDurationMs = point.timestamp - prev.timestamp
+
+            var remainingDist = segDist
+            var consumedInSeg = 0f
+
+            while (distSinceLastSplit + remainingDist >= unitMeters) {
+                val needDist = unitMeters - distSinceLastSplit
+                val frac = if (segDist > 0f) (consumedInSeg + needDist) / segDist else 0f
+                val splitEndTime = prev.timestamp + (segDurationMs * frac).toLong()
+                val elapsedMs = splitEndTime - splitStartTime
+                splits.add(SplitsView.Split(splitIndex++, elapsedMs / 1000f))
+                splitStartTime = splitEndTime
+                consumedInSeg += needDist
+                remainingDist -= needDist
+                distSinceLastSplit = 0f
+            }
+            distSinceLastSplit += remainingDist
+            prev = point
+        }
+
+        // Partial last split — include if it's at least 0.1 km / 0.1 mi
+        val minPartialMeters = if (metric) 100f else 160.934f
+        if (distSinceLastSplit >= minPartialMeters) {
+            val elapsedMs = prev.timestamp - splitStartTime
+            val secPerUnit = elapsedMs * unitMeters / (1000f * distSinceLastSplit)
+            splits.add(SplitsView.Split(splitIndex, secPerUnit, distSinceLastSplit))
+        }
+
+        return splits
     }
 
     companion object {
