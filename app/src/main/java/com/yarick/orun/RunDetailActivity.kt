@@ -5,8 +5,11 @@ import android.os.Bundle
 import android.util.Log
 import android.view.View
 import android.widget.Button
+import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.widget.TextViewCompat
+import com.yarick.orun.analysis.BestEffortAnalyzer
 import com.yarick.orun.data.LocationPoint
 import com.yarick.orun.data.RunDatabase
 import kotlinx.coroutines.CoroutineScope
@@ -92,6 +95,49 @@ class RunDetailActivity : AppCompatActivity() {
             if (splits.isNotEmpty()) {
                 findViewById<TextView>(R.id.tvSplitsHeader).visibility = View.VISIBLE
                 findViewById<SplitsView>(R.id.splitsView).setSplits(splits, metric)
+            }
+
+            // Ensure best effort analysis has been run
+            if (!run.isAnalyzed && points.size >= 2) {
+                withContext(Dispatchers.IO) {
+                    val beDao = RunDatabase.getInstance(this@RunDetailActivity).bestEffortDao()
+                    BestEffortAnalyzer.analyze(run, points, beDao, dao)
+                }
+            }
+
+            // Display best efforts for this run
+            val beDao = RunDatabase.getInstance(this@RunDetailActivity).bestEffortDao()
+            val efforts = withContext(Dispatchers.IO) { beDao.getByRun(runId) }
+            if (efforts.isNotEmpty()) {
+                val header = findViewById<TextView>(R.id.tvBestEffortsHeader)
+                val container = findViewById<LinearLayout>(R.id.bestEffortsContainer)
+                header.visibility = View.VISIBLE
+                container.visibility = View.VISIBLE
+                for (effort in efforts) {
+                    val pace = formatPace(effort.distanceMeters.toFloat(), effort.durationMs, metric)
+
+                    val tvDistance = TextView(this@RunDetailActivity)
+                    tvDistance.text = effort.distanceKey
+                    tvDistance.textSize = 18f
+                    TextViewCompat.setTextAppearance(tvDistance, com.google.android.material.R.style.TextAppearance_Material3_TitleMedium)
+
+                    val tvStats = TextView(this@RunDetailActivity)
+                    tvStats.text = "${formatDuration(effort.durationMs)}  $pace"
+                    tvStats.textSize = 14f
+
+                    val row = LinearLayout(this@RunDetailActivity)
+                    row.orientation = LinearLayout.VERTICAL
+                    val lp = LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT
+                    )
+                    lp.bottomMargin = (12 * resources.displayMetrics.density).toInt()
+                    row.layoutParams = lp
+
+                    row.addView(tvDistance)
+                    row.addView(tvStats)
+                    container.addView(row)
+                }
             }
 
             btnDelete.isEnabled = true

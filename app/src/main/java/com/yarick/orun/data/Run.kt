@@ -12,5 +12,6 @@ data class Run(
     val elevationGainMeters: Float = 0f,
     val elevationLossMeters: Float = 0f,
     val avgHeartRate: Int? = null,
-    val maxHeartRate: Int? = null
+    val maxHeartRate: Int? = null,
+    val isAnalyzed: Boolean = false
 )
