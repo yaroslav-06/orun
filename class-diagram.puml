@@ -130,6 +130,15 @@ object UnitPreference {
     +{static} setMetric(context : Context, metric : Boolean)
 }
 
+object VoiceoverPreference {
+    +{static} isEnabled(context : Context) : Boolean / setEnabled(context, v)
+    +{static} getIntervalIndex(context : Context) : Int / setIntervalIndex(context, v)
+    +{static} getStatTime(context : Context) : Boolean / setStatTime(context, v)
+    +{static} getStatSplitPace(context : Context) : Boolean / setStatSplitPace(context, v)
+    +{static} getStatOverallPace(context : Context) : Boolean / setStatOverallPace(context, v)
+    +{static} getStatSplitElevation(context : Context) : Boolean / setStatSplitElevation(context, v)
+}
+
 class FormatUtils <<top-level functions>> {
     +{static} formatDistance(meters : Float, metric : Boolean) : String
     +{static} formatPace(distanceMeters : Float, durationMs : Long, metric : Boolean) : String
@@ -189,6 +198,7 @@ RunAdapter ..> UnitPreference : reads
 RunDetailActivity ..> UnitPreference : reads
 RunStatsActivity ..> UnitPreference : reads
 SettingsActivity ..> UnitPreference : reads/writes
+SettingsActivity ..> VoiceoverPreference : reads/writes
 
 RunAdapter ..> FormatUtils : uses
 RunDetailActivity ..> FormatUtils : uses

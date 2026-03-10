@@ -1,37 +1,139 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:padding="16dp"
     android:fitsSystemWindows="true">
 
-    <TextView
-        android:layout_width="wrap_content"
+    <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Distance unit"
-        android:textAppearance="?attr/textAppearanceTitleMedium"
-        android:layout_marginBottom="8dp" />
+        android:orientation="vertical"
+        android:padding="16dp">
 
-    <RadioGroup
-        android:id="@+id/rgUnits"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal">
-
-        <RadioButton
-            android:id="@+id/rbMetric"
+        <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Kilometres (km)"
-            android:layout_marginEnd="16dp" />
+            android:text="Distance unit"
+            android:textAppearance="?attr/textAppearanceTitleMedium"
+            android:layout_marginBottom="8dp" />
 
-        <RadioButton
-            android:id="@+id/rbImperial"
+        <RadioGroup
+            android:id="@+id/rgUnits"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Miles (mi)" />
+            android:orientation="horizontal">
 
-    </RadioGroup>
+            <RadioButton
+                android:id="@+id/rbMetric"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Kilometres (km)"
+                android:layout_marginEnd="16dp" />
 
-</LinearLayout>
+            <RadioButton
+                android:id="@+id/rbImperial"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Miles (mi)" />
+
+        </RadioGroup>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="?attr/colorOutlineVariant"
+            android:layout_marginTop="16dp"
+            android:layout_marginBottom="16dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Run Settings"
+            android:textAppearance="?attr/textAppearanceTitleMedium"
+            android:layout_marginBottom="8dp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Voiceover" />
+
+            <com.google.android.material.materialswitch.MaterialSwitch
+                android:id="@+id/switchVoiceover"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/llVoiceoverOptions"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone"
+            android:layout_marginTop="12dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Announce every"
+                android:textAppearance="?attr/textAppearanceBodyMedium"
+                android:layout_marginBottom="4dp" />
+
+            <com.google.android.material.slider.Slider
+                android:id="@+id/sliderInterval"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:valueFrom="0"
+                android:valueTo="3"
+                android:stepSize="1" />
+
+            <TextView
+                android:id="@+id/tvIntervalValue"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textAppearance="?attr/textAppearanceBodySmall"
+                android:textColor="?attr/colorOnSurfaceVariant"
+                android:layout_marginBottom="12dp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Announce"
+                android:textAppearance="?attr/textAppearanceBodyMedium"
+                android:layout_marginBottom="4dp" />
+
+            <CheckBox
+                android:id="@+id/cbStatTime"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Current time" />
+
+            <CheckBox
+                android:id="@+id/cbStatSplitPace"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+
+            <CheckBox
+                android:id="@+id/cbStatOverallPace"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Overall pace" />
+
+            <CheckBox
+                android:id="@+id/cbStatSplitElev"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+</ScrollView>
