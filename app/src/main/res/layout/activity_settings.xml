@@ -111,6 +111,12 @@
                 android:layout_marginBottom="4dp" />
 
             <CheckBox
+                android:id="@+id/cbStatDistance"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Distance" />
+
+            <CheckBox
                 android:id="@+id/cbStatTime"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"

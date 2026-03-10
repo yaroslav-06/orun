@@ -59,6 +59,12 @@ class SettingsActivity : AppCompatActivity() {
         }
 
         // Checkboxes
+        val cbStatDistance = findViewById<CheckBox>(R.id.cbStatDistance)
+        cbStatDistance.isChecked = VoiceoverPreference.getStatDistance(this)
+        cbStatDistance.setOnCheckedChangeListener { _, checked ->
+            VoiceoverPreference.setStatDistance(this, checked)
+        }
+
         val cbStatTime = findViewById<CheckBox>(R.id.cbStatTime)
         val cbStatSplitPace = findViewById<CheckBox>(R.id.cbStatSplitPace)
         val cbStatOverallPace = findViewById<CheckBox>(R.id.cbStatOverallPace)

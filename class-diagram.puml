@@ -62,12 +62,28 @@ class LocationTrackingService {
     -elevationGainMeters : Float
     -elevationLossMeters : Float
     -paceBuffer : ArrayDeque<Pair<Long,Float>>
+    -tts : TextToSpeech?
+    -ttsReady : Boolean
+    -voiceoverEnabled : Boolean
+    -announceIntervalMeters : Float
+    -nextAnnouncementMeters : Float
+    -splitBoundaryMeters : Float
+    -splitBoundaryTimeMs : Long
+    -isMetric : Boolean
+    +onCreate()
     +onStartCommand(intent : Intent, flags : Int, startId : Int) : Int
+    +onDestroy()
     -startLocationUpdates()
     -processLocation(location : Location)
     -calculateCurrentPace() : Float
     -stopLocationUpdates()
     -buildNotification() : Notification
+    -announceStats()
+    -intervalIndexToMeters(index : Int, metric : Boolean) : Float
+    -formatPaceSpoken(secPerKm : Float, metric : Boolean) : String
+    -formatDurationSpoken(totalSec : Long) : String
+    -formatElevationSpoken(meters : Float, metric : Boolean) : String
+    -formatDistanceSpoken(meters : Float, metric : Boolean) : String
 }
 
 class RunDatabase <<@Database>> {
@@ -133,6 +149,7 @@ object UnitPreference {
 object VoiceoverPreference {
     +{static} isEnabled(context : Context) : Boolean / setEnabled(context, v)
     +{static} getIntervalIndex(context : Context) : Int / setIntervalIndex(context, v)
+    +{static} getStatDistance(context : Context) : Boolean / setStatDistance(context, v)
     +{static} getStatTime(context : Context) : Boolean / setStatTime(context, v)
     +{static} getStatSplitPace(context : Context) : Boolean / setStatSplitPace(context, v)
     +{static} getStatOverallPace(context : Context) : Boolean / setStatOverallPace(context, v)
@@ -204,6 +221,8 @@ RunAdapter ..> FormatUtils : uses
 RunDetailActivity ..> FormatUtils : uses
 RunStatsActivity ..> FormatUtils : uses
 
+LocationTrackingService ..> VoiceoverPreference : reads
+LocationTrackingService ..> UnitPreference : reads
 LocationTrackingService ..> RunDatabase : uses
 LocationTrackingService ..> LocationPoint : creates & saves
 LocationTrackingService ..> Run : updates on stop

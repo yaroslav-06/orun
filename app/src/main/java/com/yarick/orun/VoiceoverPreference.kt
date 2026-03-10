@@ -10,6 +10,7 @@ object VoiceoverPreference {
     private const val KEY_STAT_SPLIT_PACE = "voiceover_stat_split_pace"
     private const val KEY_STAT_OVERALL_PACE = "voiceover_stat_overall_pace"
     private const val KEY_STAT_SPLIT_ELEVATION = "voiceover_stat_split_elevation"
+    private const val KEY_STAT_DISTANCE = "voiceover_stat_distance"
 
     fun isEnabled(context: Context): Boolean =
         context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
@@ -58,4 +59,12 @@ object VoiceoverPreference {
     fun setStatSplitElevation(context: Context, v: Boolean) =
         context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
             .edit().putBoolean(KEY_STAT_SPLIT_ELEVATION, v).apply()
+
+    fun getStatDistance(context: Context): Boolean =
+        context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            .getBoolean(KEY_STAT_DISTANCE, true)
+
+    fun setStatDistance(context: Context, v: Boolean) =
+        context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            .edit().putBoolean(KEY_STAT_DISTANCE, v).apply()
 }

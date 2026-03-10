@@ -7,6 +7,7 @@ import android.content.Intent
 import android.location.Location
 import android.os.IBinder
 import android.os.Looper
+import android.speech.tts.TextToSpeech
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.google.android.gms.location.FusedLocationProviderClient
@@ -16,6 +17,8 @@ import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 import com.yarick.orun.RunStatsActivity
+import com.yarick.orun.UnitPreference
+import com.yarick.orun.VoiceoverPreference
 import com.yarick.orun.data.LocationPoint
 import com.yarick.orun.data.Run
 import com.yarick.orun.data.RunDatabase
@@ -26,6 +29,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
+import java.util.Locale
 
 class LocationTrackingService : Service() {
 
@@ -50,10 +54,22 @@ class LocationTrackingService : Service() {
     private var elevationGainMeters: Float = 0f
     private var elevationLossMeters: Float = 0f
     private val paceBuffer = ArrayDeque<Pair<Long, Float>>() // (timestamp ms, cumulative distance m)
+    private var tts: TextToSpeech? = null
+    private var ttsReady: Boolean = false
+    private var voiceoverEnabled: Boolean = false
+    private var announceIntervalMeters: Float = 0f
+    private var nextAnnouncementMeters: Float = 0f
+    private var splitBoundaryMeters: Float = 0f
+    private var splitBoundaryTimeMs: Long = 0L
+    private var isMetric: Boolean = true
 
     override fun onCreate() {
         super.onCreate()
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
+        tts = TextToSpeech(this) { status ->
+            ttsReady = (status == TextToSpeech.SUCCESS)
+            if (ttsReady) tts?.language = Locale.getDefault()
+        }
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -62,6 +78,19 @@ class LocationTrackingService : Service() {
                 runId = intent.getLongExtra(EXTRA_RUN_ID, 0)
                 val startTime = intent.getLongExtra(EXTRA_START_TIME, System.currentTimeMillis())
                 stats.value = RunStats(startTime = startTime)
+
+                // Reset accumulation for new run
+                distanceMeters = 0f; elevationGainMeters = 0f; elevationLossMeters = 0f
+                paceBuffer.clear(); lastSavedLocation = null; lastAltitude = null
+
+                // Voiceover
+                voiceoverEnabled = VoiceoverPreference.isEnabled(this)
+                isMetric = UnitPreference.isMetric(this)
+                announceIntervalMeters = intervalIndexToMeters(VoiceoverPreference.getIntervalIndex(this), isMetric)
+                nextAnnouncementMeters = announceIntervalMeters
+                splitBoundaryMeters = 0f
+                splitBoundaryTimeMs = startTime
+
                 startForeground(NOTIFICATION_ID, buildNotification())
                 startLocationUpdates()
             }
@@ -140,6 +169,23 @@ class LocationTrackingService : Service() {
             currentPaceSecPerKm = calculateCurrentPace()
         )
 
+        if (voiceoverEnabled && announceIntervalMeters > 0f) {
+            while (distanceMeters >= nextAnnouncementMeters) {
+                announceStats()
+                nextAnnouncementMeters += announceIntervalMeters
+            }
+        }
+
+        // Update whole-unit split boundary after any announcements
+        if (voiceoverEnabled) {
+            val unitMeters = if (isMetric) 1000f else 1609.344f
+            val newBoundary = (distanceMeters / unitMeters).toInt().toFloat() * unitMeters
+            if (newBoundary > splitBoundaryMeters) {
+                splitBoundaryMeters = newBoundary
+                splitBoundaryTimeMs = System.currentTimeMillis()
+            }
+        }
+
         Log.d("orun", "GPS fix: dist=${distanceMeters}m elev+${elevationGainMeters}m -${elevationLossMeters}m")
 
         scope.launch {
@@ -192,8 +238,85 @@ class LocationTrackingService : Service() {
             .build()
     }
 
+    private fun announceStats() {
+        if (!ttsReady) return
+        val snapshot = stats.value
+        val parts = mutableListOf<String>()
+
+        if (VoiceoverPreference.getStatDistance(this)) {
+            parts.add("Distance ${formatDistanceSpoken(snapshot.distanceMeters, isMetric)}")
+        }
+        if (VoiceoverPreference.getStatTime(this)) {
+            val elapsedSec = (System.currentTimeMillis() - snapshot.startTime) / 1000L
+            parts.add("Time ${formatDurationSpoken(elapsedSec)}")
+        }
+        if (VoiceoverPreference.getStatSplitPace(this)) {
+            val splitDist = distanceMeters - splitBoundaryMeters
+            val splitTimeSec = (System.currentTimeMillis() - splitBoundaryTimeMs) / 1000f
+            if (splitDist > 0f && splitTimeSec > 0f) {
+                val splitPaceSecPerKm = splitTimeSec * 1000f / splitDist
+                parts.add("Pace ${formatPaceSpoken(splitPaceSecPerKm, isMetric)}")
+            }
+        }
+        if (VoiceoverPreference.getStatOverallPace(this)) {
+            val elapsedMs = System.currentTimeMillis() - snapshot.startTime
+            val dist = snapshot.distanceMeters
+            if (dist > 0f) {
+                val overallSecPerKm = (elapsedMs / 1000f) / (dist / 1000f)
+                parts.add("Overall pace ${formatPaceSpoken(overallSecPerKm, isMetric)}")
+            }
+        }
+        if (VoiceoverPreference.getStatSplitElevation(this)) {
+            parts.add("Elevation gain ${formatElevationSpoken(snapshot.elevationGainMeters, isMetric)}")
+        }
+
+        if (parts.isNotEmpty()) {
+            tts?.speak(parts.joinToString(". "), TextToSpeech.QUEUE_FLUSH, null, null)
+        }
+    }
+
+    private fun intervalIndexToMeters(index: Int, metric: Boolean): Float {
+        val unitMeters = if (metric) 1000f else 1609.344f
+        return when (index) {
+            0 -> unitMeters / 8f
+            1 -> unitMeters / 4f
+            2 -> unitMeters / 2f
+            else -> unitMeters
+        }
+    }
+
+    private fun formatPaceSpoken(secPerKm: Float, metric: Boolean): String {
+        val secPerUnit = if (metric) secPerKm else secPerKm * 1000f / 1609.344f
+        val m = (secPerUnit / 60).toInt()
+        val s = (secPerUnit % 60).toInt()
+        val unit = if (metric) "per kilometre" else "per mile"
+        return if (s == 0) "$m minutes $unit" else "$m minutes $s seconds $unit"
+    }
+
+    private fun formatDurationSpoken(totalSec: Long): String {
+        val h = totalSec / 3600
+        val m = (totalSec % 3600) / 60
+        val s = totalSec % 60
+        val parts = mutableListOf<String>()
+        if (h > 0) parts.add("$h ${if (h == 1L) "hour" else "hours"}")
+        if (m > 0) parts.add("$m ${if (m == 1L) "minute" else "minutes"}")
+        if (s > 0 || parts.isEmpty()) parts.add("$s ${if (s == 1L) "second" else "seconds"}")
+        return parts.joinToString(" ")
+    }
+
+    private fun formatElevationSpoken(meters: Float, metric: Boolean): String =
+        if (metric) "${meters.toInt()} metres"
+        else "${(meters / 0.3048f).toInt()} feet"
+
+    private fun formatDistanceSpoken(meters: Float, metric: Boolean): String =
+        if (metric) "%.2f kilometres".format(meters / 1000f)
+        else "%.2f miles".format(meters / 1609.344f)
+
     override fun onDestroy() {
         stopLocationUpdates()
+        tts?.stop()
+        tts?.shutdown()
+        tts = null
         scope.cancel()
         super.onDestroy()
     }
