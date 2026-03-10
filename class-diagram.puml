@@ -22,6 +22,8 @@ class MainActivity {
 
 class RunDetailActivity {
     -scope : CoroutineScope
+    -runId : Long
+    +btnDeleteRun : Button
     +onCreate(savedInstanceState : Bundle?)
     +onSupportNavigateUp() : Boolean
     +onDestroy()
@@ -35,16 +37,12 @@ class RunAdapter {
     +onBindViewHolder(...)
     +getItemCount() : Int
     -formatDate(ms : Long) : String
-    -formatDuration(startMs : Long, endMs : Long) : String
-    -formatPace(distanceM : Float, durationMs : Long) : String
 }
 
 class RunStatsActivity {
     -scope : CoroutineScope
     -frozenDurationSec : Long?
     +onCreate(savedInstanceState : Bundle?)
-    -formatDuration(totalSec : Long) : String
-    -formatPace(secPerKm : Float) : String
 }
 
 class LocationTrackingService {
@@ -84,6 +82,8 @@ interface RunDao <<@Dao>> {
     +getPointsForRun(runId : Long) : List<LocationPoint>
     +getAllFinishedRuns() : Flow<List<Run>>
     +getRunById(id : Long) : Run?
+    +deletePointsForRun(runId : Long)
+    +deleteRunById(id : Long)
 }
 
 class Run <<@Entity: runs>> {
@@ -122,10 +122,32 @@ class OrunApp {
     +onCreate()
 }
 
+object UnitPreference {
+    -{static} PREFS_NAME : String
+    -{static} KEY_METRIC : String
+    +{static} isMetric(context : Context) : Boolean
+    +{static} setMetric(context : Context, metric : Boolean)
+}
+
+class FormatUtils <<top-level functions>> {
+    +{static} formatDistance(meters : Float, metric : Boolean) : String
+    +{static} formatPace(distanceMeters : Float, durationMs : Long, metric : Boolean) : String
+    +{static} formatPaceFromSecPerKm(secPerKm : Float, metric : Boolean) : String
+    +{static} formatElevation(meters : Float, metric : Boolean) : String
+    +{static} formatDuration(durationMs : Long) : String
+    +{static} formatDurationSec(totalSec : Long) : String
+}
+
+class SettingsActivity {
+    +onCreate(savedInstanceState : Bundle?)
+    +onSupportNavigateUp() : Boolean
+}
+
 OrunApp --|> Application
 MainActivity --|> AppCompatActivity
 RunStatsActivity --|> AppCompatActivity
 RunDetailActivity --|> AppCompatActivity
+SettingsActivity --|> AppCompatActivity
 LocationTrackingService --|> Service
 RunDatabase --|> RoomDatabase
 
@@ -139,6 +161,7 @@ MainActivity ..> Run : creates
 MainActivity ..> LocationTrackingService : starts
 MainActivity ..> RunStatsActivity : opens
 MainActivity ..> RunDetailActivity : opens
+MainActivity ..> SettingsActivity : opens
 MainActivity ..> RunStats : observes
 MainActivity *-- RunAdapter : uses
 
@@ -148,6 +171,15 @@ RunAdapter ..> Run : displays
 
 RunStatsActivity ..> LocationTrackingService : sends ACTION_STOP
 RunStatsActivity ..> RunStats : collects
+
+RunAdapter ..> UnitPreference : reads
+RunDetailActivity ..> UnitPreference : reads
+RunStatsActivity ..> UnitPreference : reads
+SettingsActivity ..> UnitPreference : reads/writes
+
+RunAdapter ..> FormatUtils : uses
+RunDetailActivity ..> FormatUtils : uses
+RunStatsActivity ..> FormatUtils : uses
 
 LocationTrackingService ..> RunDatabase : uses
 LocationTrackingService ..> LocationPoint : creates & saves

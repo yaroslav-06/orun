@@ -63,4 +63,12 @@
         android:textAppearance="?attr/textAppearanceBodyMedium"
         android:visibility="gone" />
 
+    <Button
+        android:id="@+id/btnDeleteRun"
+        style="@style/Widget.Material3.Button.TonalButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="32dp"
+        android:text="Delete Run" />
+
 </LinearLayout>

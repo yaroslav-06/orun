@@ -1,5 +1,14 @@
 # Orun — Claude Instructions
 
+## Safe Area / System Window Insets
+
+Every new activity layout **must** include `android:fitsSystemWindows="true"` on the root view so that content is never obscured by the status bar or navigation bar.
+
+```xml
+<LinearLayout ...
+    android:fitsSystemWindows="true">
+```
+
 ## Class Diagram
 
 `class-diagram.puml` at the repo root is the authoritative UML class diagram for the project.

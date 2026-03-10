@@ -17,4 +17,8 @@ interface RunDao {
     fun getAllFinishedRuns(): Flow<List<Run>>
     @Query("SELECT * FROM runs WHERE id = :id")
     suspend fun getRunById(id: Long): Run?
+    @Query("DELETE FROM location_points WHERE runId = :runId")
+    suspend fun deletePointsForRun(runId: Long)
+    @Query("DELETE FROM runs WHERE id = :id")
+    suspend fun deleteRunById(id: Long)
 }

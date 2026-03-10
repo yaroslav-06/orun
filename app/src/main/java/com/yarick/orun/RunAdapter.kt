@@ -34,11 +34,15 @@ class RunAdapter(private val onClick: (Run) -> Unit) :
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val run = runs[position]
-        holder.tvDate.text = formatDate(run.startTime)
-        holder.tvDistance.text = "%.2f km".format(run.totalDistanceMeters / 1000f)
+        val context = holder.itemView.context
+        val metric = UnitPreference.isMetric(context)
         val endTime = run.endTime ?: run.startTime
-        holder.tvDuration.text = formatDuration(run.startTime, endTime)
-        holder.tvPace.text = formatPace(run.totalDistanceMeters, endTime - run.startTime)
+        val durationMs = endTime - run.startTime
+
+        holder.tvDate.text = formatDate(run.startTime)
+        holder.tvDistance.text = formatDistance(run.totalDistanceMeters, metric)
+        holder.tvDuration.text = formatDuration(durationMs)
+        holder.tvPace.text = formatPace(run.totalDistanceMeters, durationMs, metric)
     }
 
     override fun getItemCount() = runs.size
@@ -46,21 +50,5 @@ class RunAdapter(private val onClick: (Run) -> Unit) :
     private fun formatDate(ms: Long): String {
         val sdf = SimpleDateFormat("EEE, d MMM yyyy · HH:mm", Locale.getDefault())
         return sdf.format(ms)
-    }
-
-    private fun formatDuration(startMs: Long, endMs: Long): String {
-        val totalSec = (endMs - startMs) / 1000
-        val h = totalSec / 3600
-        val m = (totalSec % 3600) / 60
-        val s = totalSec % 60
-        return if (h > 0) "%d:%02d:%02d".format(h, m, s) else "%d:%02d".format(m, s)
-    }
-
-    private fun formatPace(distanceM: Float, durationMs: Long): String {
-        if (distanceM <= 0f) return "– /km"
-        val secPerKm = (durationMs / 1000f) / (distanceM / 1000f)
-        val m = (secPerKm / 60).toInt()
-        val s = (secPerKm % 60).toInt()
-        return "%d:%02d /km".format(m, s)
     }
 }

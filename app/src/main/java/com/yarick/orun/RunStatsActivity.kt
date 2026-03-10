@@ -22,6 +22,8 @@ class RunStatsActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_run_stats)
 
+        val metric = UnitPreference.isMetric(this)
+
         val tvDistance = findViewById<TextView>(R.id.tvDistance)
         val tvDuration = findViewById<TextView>(R.id.tvDuration)
         val tvOverallPace = findViewById<TextView>(R.id.tvOverallPace)
@@ -33,12 +35,11 @@ class RunStatsActivity : AppCompatActivity() {
         // Collect stats from service
         scope.launch {
             LocationTrackingService.stats.collect { stats ->
-                val distanceKm = stats.distanceMeters / 1000f
-                tvDistance.text = "%.2f km".format(distanceKm)
+                tvDistance.text = formatDistance(stats.distanceMeters, metric)
                 tvCurrentPace.text = if (stats.currentPaceSecPerKm > 0)
-                    formatPace(stats.currentPaceSecPerKm) else "--:--"
-                tvElevationGain.text = "+%.0f m".format(stats.elevationGainMeters)
-                tvElevationLoss.text = "-%.0f m".format(stats.elevationLossMeters)
+                    formatPaceFromSecPerKm(stats.currentPaceSecPerKm, metric) else "--:--"
+                tvElevationGain.text = "+${formatElevation(stats.elevationGainMeters, metric)}"
+                tvElevationLoss.text = "-${formatElevation(stats.elevationLossMeters, metric)}"
 
                 if (stats.isFinished) {
                     if (frozenDurationSec == null && stats.startTime > 0) {
@@ -55,10 +56,9 @@ class RunStatsActivity : AppCompatActivity() {
                 val stats = LocationTrackingService.stats.value
                 val durationSec = frozenDurationSec
                     ?: if (stats.startTime > 0) (System.currentTimeMillis() - stats.startTime) / 1000 else 0L
-                tvDuration.text = formatDuration(durationSec)
+                tvDuration.text = formatDurationSec(durationSec)
                 if (stats.distanceMeters > 0f) {
-                    val paceSecPerKm = durationSec * 1000f / stats.distanceMeters
-                    tvOverallPace.text = formatPace(paceSecPerKm)
+                    tvOverallPace.text = formatPace(stats.distanceMeters, durationSec * 1000L, metric)
                 } else {
                     tvOverallPace.text = "--:--"
                 }
@@ -72,20 +72,6 @@ class RunStatsActivity : AppCompatActivity() {
                 action = LocationTrackingService.ACTION_STOP
             })
         }
-    }
-
-    private fun formatDuration(totalSec: Long): String {
-        val h = totalSec / 3600
-        val m = (totalSec % 3600) / 60
-        val s = totalSec % 60
-        return if (h > 0) "%d:%02d:%02d".format(h, m, s) else "%02d:%02d".format(m, s)
-    }
-
-    private fun formatPace(secPerKm: Float): String {
-        val totalSec = secPerKm.toLong()
-        val m = totalSec / 60
-        val s = totalSec % 60
-        return "%d:%02d /km".format(m, s)
     }
 
     override fun onDestroy() {

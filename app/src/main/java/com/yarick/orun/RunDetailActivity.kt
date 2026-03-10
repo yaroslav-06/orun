@@ -1,7 +1,9 @@
 package com.yarick.orun
 
 import android.os.Bundle
+import android.util.Log
 import android.view.View
+import android.widget.Button
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import com.yarick.orun.data.RunDatabase
@@ -16,14 +18,34 @@ import java.util.Locale
 
 class RunDetailActivity : AppCompatActivity() {
     private val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
+    private var runId = -1L
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_run_detail)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
-        val runId = intent.getLongExtra("run_id", -1L)
+        runId = intent.getLongExtra("run_id", -1L)
         if (runId == -1L) { finish(); return }
+
+        val metric = UnitPreference.isMetric(this)
+
+        val btnDelete = findViewById<Button>(R.id.btnDeleteRun)
+        btnDelete.isEnabled = false
+        btnDelete.setOnClickListener {
+            scope.launch {
+                try {
+                    withContext(Dispatchers.IO) {
+                        val dao = RunDatabase.getInstance(this@RunDetailActivity).runDao()
+                        dao.deletePointsForRun(runId)
+                        dao.deleteRunById(runId)
+                    }
+                    finish()
+                } catch (e: Exception) {
+                    Log.e(TAG, "Failed to delete run $runId", e)
+                }
+            }
+        }
 
         scope.launch {
             val run = withContext(Dispatchers.IO) {
@@ -37,27 +59,17 @@ class RunDetailActivity : AppCompatActivity() {
             findViewById<TextView>(R.id.tvDetailDate).text = sdf.format(run.startTime)
 
             findViewById<TextView>(R.id.tvDetailDistance).text =
-                "%.2f km".format(run.totalDistanceMeters / 1000f)
+                formatDistance(run.totalDistanceMeters, metric)
 
-            val totalSec = durationMs / 1000
-            val h = totalSec / 3600
-            val m = (totalSec % 3600) / 60
-            val s = totalSec % 60
-            findViewById<TextView>(R.id.tvDetailDuration).text =
-                if (h > 0) "%d:%02d:%02d".format(h, m, s) else "%d:%02d".format(m, s)
+            findViewById<TextView>(R.id.tvDetailDuration).text = formatDuration(durationMs)
 
-            val paceStr = if (run.totalDistanceMeters > 0f) {
-                val secPerKm = (durationMs / 1000f) / (run.totalDistanceMeters / 1000f)
-                val pm = (secPerKm / 60).toInt()
-                val ps = (secPerKm % 60).toInt()
-                "%d:%02d /km".format(pm, ps)
-            } else "– /km"
-            findViewById<TextView>(R.id.tvDetailPace).text = paceStr
+            findViewById<TextView>(R.id.tvDetailPace).text =
+                formatPace(run.totalDistanceMeters, durationMs, metric)
 
             findViewById<TextView>(R.id.tvDetailElevGain).text =
-                "Elevation gain: %.0f m".format(run.elevationGainMeters)
+                "Elevation gain: ${formatElevation(run.elevationGainMeters, metric)}"
             findViewById<TextView>(R.id.tvDetailElevLoss).text =
-                "Elevation loss: %.0f m".format(run.elevationLossMeters)
+                "Elevation loss: ${formatElevation(run.elevationLossMeters, metric)}"
 
             run.avgHeartRate?.let {
                 val tv = findViewById<TextView>(R.id.tvDetailAvgHR)
@@ -69,7 +81,13 @@ class RunDetailActivity : AppCompatActivity() {
                 tv.text = "Max heart rate: $it bpm"
                 tv.visibility = View.VISIBLE
             }
+
+            btnDelete.isEnabled = true
         }
+    }
+
+    companion object {
+        private const val TAG = "RunDetailActivity"
     }
 
     override fun onSupportNavigateUp(): Boolean {
