@@ -2,22 +2,34 @@
 
 abstract class Application <<Android>>
 abstract class AppCompatActivity <<Android>>
+abstract class Fragment <<Android>>
 abstract class Service <<Android>>
 abstract class RoomDatabase <<Room>>
 
 class MainActivity {
-    -fab : FloatingActionButton
+    +onCreate(savedInstanceState : Bundle?)
+    -createNotificationChannel()
+}
+
+class HomeFragment {
+    -adapter : RunAdapter
     -scope : CoroutineScope
     -mainScope : CoroutineScope
     -observeJob : Job
     -listJob : Job
-    -adapter : RunAdapter
-    +onCreate(savedInstanceState : Bundle?)
+    +onCreateView(...) : View
     +onResume()
     +onPause()
     -startRun()
     -updateFab(stats : RunStats)
-    -createNotificationChannel()
+}
+
+class MapFragment {
+    +onCreateView(...) : View
+}
+
+class AchievementsFragment {
+    +onCreateView(...) : View
 }
 
 class RunDetailActivity {
@@ -204,6 +216,9 @@ class SplitsView {
 
 OrunApp --|> Application
 MainActivity --|> AppCompatActivity
+HomeFragment --|> Fragment
+MapFragment --|> Fragment
+AchievementsFragment --|> Fragment
 RunStatsActivity --|> AppCompatActivity
 RunDetailActivity --|> AppCompatActivity
 SettingsActivity --|> AppCompatActivity
@@ -219,14 +234,18 @@ BestEffortDao ..> BestEffort : operates on
 LocationPoint "many" --> "1" Run : runId FK
 BestEffort "many" --> "1" Run : runId FK
 
-MainActivity ..> RunDatabase : uses
-MainActivity ..> Run : creates
-MainActivity ..> LocationTrackingService : starts
-MainActivity ..> RunStatsActivity : opens
-MainActivity ..> RunDetailActivity : opens
-MainActivity ..> SettingsActivity : opens
-MainActivity ..> RunStats : observes
-MainActivity *-- RunAdapter : uses
+MainActivity *-- HomeFragment : hosts
+MainActivity *-- MapFragment : hosts
+MainActivity *-- AchievementsFragment : hosts
+
+HomeFragment ..> RunDatabase : uses
+HomeFragment ..> Run : creates
+HomeFragment ..> LocationTrackingService : starts
+HomeFragment ..> RunStatsActivity : opens
+HomeFragment ..> RunDetailActivity : opens
+HomeFragment ..> SettingsActivity : opens
+HomeFragment ..> RunStats : observes
+HomeFragment *-- RunAdapter : uses
 
 RunDetailActivity ..> RunDatabase : uses
 RunDetailActivity ..> Run : displays

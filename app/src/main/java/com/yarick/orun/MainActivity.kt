@@ -3,53 +3,16 @@ package com.yarick.orun
 import android.Manifest
 import android.app.NotificationChannel
 import android.app.NotificationManager
-import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
-import android.view.Menu
-import android.view.MenuItem
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
-import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.appbar.MaterialToolbar
-import com.google.android.material.floatingactionbutton.FloatingActionButton
-import com.yarick.orun.data.Run
-import com.yarick.orun.data.RunDatabase
-import com.yarick.orun.data.RunStats
+import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.yarick.orun.service.LocationTrackingService
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
-import kotlinx.coroutines.launch
 
 class MainActivity : AppCompatActivity() {
-    private lateinit var fab: FloatingActionButton
-    private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
-    private val mainScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
-    private var observeJob: Job? = null
-    private var listJob: Job? = null
-    private lateinit var adapter: RunAdapter
-
-    private val requestPermissionLauncher = registerForActivityResult(
-        ActivityResultContracts.RequestMultiplePermissions()
-    ) { permissions ->
-        if (permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q &&
-                checkSelfPermission(Manifest.permission.ACCESS_BACKGROUND_LOCATION) != PackageManager.PERMISSION_GRANTED
-            ) {
-                requestBackgroundLocationLauncher.launch(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
-            }
-            startRun()
-        }
-    }
-
-    private val requestBackgroundLocationLauncher = registerForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { /* background permission result; run already started */ }
 
     private val requestNotificationLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -70,63 +33,41 @@ class MainActivity : AppCompatActivity() {
             requestNotificationLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
         }
 
-        adapter = RunAdapter { run ->
-            startActivity(Intent(this, RunDetailActivity::class.java).putExtra("run_id", run.id))
-        }
-        val rvRuns = findViewById<RecyclerView>(R.id.rvRuns)
-        rvRuns.layoutManager = LinearLayoutManager(this)
-        rvRuns.adapter = adapter
+        if (savedInstanceState == null) {
+            val homeFragment = HomeFragment()
+            val mapFragment = MapFragment()
+            val achievementsFragment = AchievementsFragment()
 
-        fab = findViewById(R.id.fab)
-        fab.setOnClickListener {
-            val currentStats = LocationTrackingService.stats.value
-            if (currentStats.startTime > 0 && !currentStats.isFinished) {
-                startActivity(Intent(this, RunStatsActivity::class.java))
-            } else {
-                if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q &&
-                        checkSelfPermission(Manifest.permission.ACCESS_BACKGROUND_LOCATION) != PackageManager.PERMISSION_GRANTED
-                    ) {
-                        requestBackgroundLocationLauncher.launch(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
-                    }
-                    startRun()
-                } else {
-                    requestPermissionLauncher.launch(
-                        arrayOf(
-                            Manifest.permission.ACCESS_FINE_LOCATION,
-                            Manifest.permission.ACCESS_COARSE_LOCATION
-                        )
-                    )
+            supportFragmentManager.beginTransaction()
+                .add(R.id.fragment_container, achievementsFragment, "achievements")
+                .add(R.id.fragment_container, mapFragment, "map")
+                .add(R.id.fragment_container, homeFragment, "home")
+                .hide(achievementsFragment)
+                .hide(mapFragment)
+                .commit()
+        }
+
+        val bottomNav = findViewById<BottomNavigationView>(R.id.bottom_nav)
+        bottomNav.setOnItemSelectedListener { item ->
+            val fm = supportFragmentManager
+            val home = fm.findFragmentByTag("home")!!
+            val map = fm.findFragmentByTag("map")!!
+            val achievements = fm.findFragmentByTag("achievements")!!
+            when (item.itemId) {
+                R.id.nav_home -> {
+                    fm.beginTransaction().show(home).hide(map).hide(achievements).commit()
+                    true
                 }
+                R.id.nav_map -> {
+                    fm.beginTransaction().hide(home).show(map).hide(achievements).commit()
+                    true
+                }
+                R.id.nav_achievements -> {
+                    fm.beginTransaction().hide(home).hide(map).show(achievements).commit()
+                    true
+                }
+                else -> false
             }
-        }
-    }
-
-    override fun onResume() {
-        super.onResume()
-        observeJob = mainScope.launch {
-            LocationTrackingService.stats.collect { stats ->
-                updateFab(stats)
-            }
-        }
-        listJob = mainScope.launch {
-            RunDatabase.getInstance(this@MainActivity).runDao().getAllFinishedRuns().collect { runs ->
-                adapter.submitList(runs)
-            }
-        }
-    }
-
-    override fun onPause() {
-        observeJob?.cancel()
-        listJob?.cancel()
-        super.onPause()
-    }
-
-    private fun updateFab(stats: RunStats) {
-        if (stats.startTime > 0 && !stats.isFinished) {
-            fab.setImageResource(android.R.drawable.ic_media_play)
-        } else {
-            fab.setImageResource(android.R.drawable.ic_input_add)
         }
     }
 
@@ -141,48 +82,5 @@ class MainActivity : AppCompatActivity() {
             }
             getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
         }
-    }
-
-    private fun startRun() {
-        scope.launch {
-            val startTime = System.currentTimeMillis()
-            val runId = RunDatabase.getInstance(this@MainActivity)
-                .runDao()
-                .insertRun(Run(startTime = startTime))
-
-            val intent = Intent(this@MainActivity, LocationTrackingService::class.java).apply {
-                action = LocationTrackingService.ACTION_START
-                putExtra(LocationTrackingService.EXTRA_RUN_ID, runId)
-                putExtra(LocationTrackingService.EXTRA_START_TIME, startTime)
-            }
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                startForegroundService(intent)
-            } else {
-                startService(intent)
-            }
-
-            runOnUiThread {
-                startActivity(Intent(this@MainActivity, RunStatsActivity::class.java))
-            }
-        }
-    }
-
-    override fun onCreateOptionsMenu(menu: Menu): Boolean {
-        menuInflater.inflate(R.menu.menu_main, menu)
-        return true
-    }
-
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        if (item.itemId == R.id.action_settings) {
-            startActivity(Intent(this, SettingsActivity::class.java))
-            return true
-        }
-        return super.onOptionsItemSelected(item)
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        scope.cancel()
-        mainScope.cancel()
     }
 }
