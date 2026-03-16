@@ -37,6 +37,9 @@
         <activity
             android:name=".SettingsActivity"
             android:exported="false" />
+        <activity
+            android:name=".DistanceEffortsActivity"
+            android:exported="false" />
         <service
             android:name=".service.LocationTrackingService"
             android:foregroundServiceType="location"

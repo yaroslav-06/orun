@@ -84,14 +84,7 @@ object BestEffortAnalyzer {
 
             if (bestMs == Long.MAX_VALUE) continue
 
-            val existing = dao.getByDistance(key)
-            if (existing.size < 3 || bestMs < existing.last().durationMs) {
-                dao.insert(BestEffort(distanceKey = key, distanceMeters = targetDist, runId = run.id, durationMs = bestMs))
-                val updated = dao.getByDistance(key)
-                if (updated.size > 3) {
-                    dao.delete(updated[3])
-                }
-            }
+            dao.insert(BestEffort(distanceKey = key, distanceMeters = targetDist, runId = run.id, durationMs = bestMs))
         }
 
         runDao.updateRun(run.copy(isAnalyzed = true))

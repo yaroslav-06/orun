@@ -1,8 +1,10 @@
 package com.yarick.orun
 
+import android.content.Intent
 import android.location.Location
 import android.os.Bundle
 import android.util.Log
+import android.util.TypedValue
 import android.view.View
 import android.widget.Button
 import android.widget.LinearLayout
@@ -136,6 +138,20 @@ class RunDetailActivity : AppCompatActivity() {
 
                     row.addView(tvDistance)
                     row.addView(tvStats)
+
+                    val ripple = TypedValue()
+                    theme.resolveAttribute(android.R.attr.selectableItemBackground, ripple, true)
+                    row.setBackgroundResource(ripple.resourceId)
+                    row.isClickable = true
+                    row.isFocusable = true
+                    row.setOnClickListener {
+                        startActivity(
+                            Intent(this@RunDetailActivity, DistanceEffortsActivity::class.java)
+                                .putExtra("distance_key", effort.distanceKey)
+                                .putExtra("distance_label", effort.distanceKey)
+                        )
+                    }
+
                     container.addView(row)
                 }
             }

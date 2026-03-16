@@ -8,7 +8,6 @@ abstract class RoomDatabase <<Room>>
 
 class MainActivity {
     +onCreate(savedInstanceState : Bundle?)
-    -createNotificationChannel()
 }
 
 class HomeFragment {
@@ -29,7 +28,10 @@ class MapFragment {
 }
 
 class AchievementsFragment {
+    -scope : CoroutineScope
     +onCreateView(...) : View
+    +onViewCreated(view : View, savedInstanceState : Bundle?)
+    +onDestroyView()
 }
 
 class RunDetailActivity {
@@ -142,6 +144,7 @@ interface BestEffortDao <<@Dao>> {
     +delete(effort : BestEffort)
     +getByDistance(key : String) : List<BestEffort>
     +getByRun(runId : Long) : List<BestEffort>
+    +getAllBestPerDistance() : List<BestEffort>
 }
 
 object BestEffortAnalyzer {
@@ -205,6 +208,22 @@ class SettingsActivity {
     +onSupportNavigateUp() : Boolean
 }
 
+class DistanceEffortsActivity {
+    -scope : CoroutineScope
+    +onCreate(savedInstanceState : Bundle?)
+    +onSupportNavigateUp() : Boolean
+    +onDestroy()
+}
+
+class EffortAdapter {
+    -items : List<Pair<BestEffort, Long>>
+    -metric : Boolean
+    -onClick : (Long) -> Unit
+    +onCreateViewHolder(...) : ViewHolder
+    +onBindViewHolder(...)
+    +getItemCount() : Int
+}
+
 class SplitsView {
     +{static} Split : data class (index : Int, secPerUnit : Float)
     -splits : List<Split>
@@ -222,6 +241,7 @@ AchievementsFragment --|> Fragment
 RunStatsActivity --|> AppCompatActivity
 RunDetailActivity --|> AppCompatActivity
 SettingsActivity --|> AppCompatActivity
+DistanceEffortsActivity --|> AppCompatActivity
 SplitsView --|> View
 LocationTrackingService --|> Service
 RunDatabase --|> RoomDatabase
@@ -259,6 +279,22 @@ RunStatsActivity ..> LocationTrackingService : sends ACTION_STOP
 RunStatsActivity ..> RunStats : collects
 
 RunAdapter ..> UnitPreference : reads
+AchievementsFragment ..> RunDatabase : uses
+AchievementsFragment ..> BestEffort : displays
+AchievementsFragment ..> UnitPreference : reads
+AchievementsFragment ..> FormatUtils : uses
+AchievementsFragment ..> DistanceEffortsActivity : opens
+
+DistanceEffortsActivity ..> RunDatabase : uses
+DistanceEffortsActivity ..> BestEffort : displays
+DistanceEffortsActivity ..> RunDetailActivity : opens
+DistanceEffortsActivity *-- EffortAdapter : uses
+EffortAdapter ..> BestEffort : displays
+EffortAdapter ..> FormatUtils : uses
+EffortAdapter ..> UnitPreference : reads
+
+RunDetailActivity ..> DistanceEffortsActivity : opens
+
 RunDetailActivity ..> UnitPreference : reads
 RunStatsActivity ..> UnitPreference : reads
 SettingsActivity ..> UnitPreference : reads/writes
