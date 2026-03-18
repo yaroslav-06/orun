@@ -17,26 +17,33 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 class AchievementsFragment : Fragment() {
-    private val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
+    private var scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
+        scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
         return inflater.inflate(R.layout.fragment_achievements, container, false)
     }
 
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
+    override fun onResume() {
+        super.onResume()
+        loadRecords()
+    }
 
+    private fun loadRecords() {
+        val view = view ?: return
         val tvNoRecords = view.findViewById<TextView>(R.id.tvNoRecords)
         val recordsContainer = view.findViewById<LinearLayout>(R.id.recordsContainer)
         val metric = UnitPreference.isMetric(requireContext())
 
         scope.launch {
+            recordsContainer.removeAllViews()
             val beDao = RunDatabase.getInstance(requireContext()).bestEffortDao()
             val efforts = withContext(Dispatchers.IO) { beDao.getAllBestPerDistance() }
 
             if (efforts.isEmpty()) {
                 tvNoRecords.visibility = View.VISIBLE
             } else {
+                tvNoRecords.visibility = View.GONE
                 val inflater = LayoutInflater.from(requireContext())
                 for (effort in efforts) {
                     val row = inflater.inflate(R.layout.item_record, recordsContainer, false)

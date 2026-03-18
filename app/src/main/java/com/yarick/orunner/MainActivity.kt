@@ -59,14 +59,17 @@ class MainActivity : AppCompatActivity() {
             when (item.itemId) {
                 R.id.nav_home -> {
                     fm.beginTransaction().show(home).hide(map).hide(achievements).commit()
+                    supportActionBar?.show()
                     true
                 }
                 R.id.nav_map -> {
                     fm.beginTransaction().hide(home).show(map).hide(achievements).commit()
+                    supportActionBar?.hide()
                     true
                 }
                 R.id.nav_achievements -> {
                     fm.beginTransaction().hide(home).hide(map).show(achievements).commit()
+                    supportActionBar?.hide()
                     true
                 }
                 else -> false

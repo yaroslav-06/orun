@@ -25,9 +25,15 @@ class HomeFragment {
 
 class MapFragment {
     -map : MapView
+    -fusedLocationClient : FusedLocationProviderClient
+    -fabMyLocation : FloatingActionButton
+    -myLocationOverlay : MyLocationNewOverlay
+    -scope : CoroutineScope
     +onCreateView(...) : View
     +onResume()
     +onPause()
+    +onDestroyView()
+    -goToMyLocation()
 }
 
 class AchievementsFragment {
@@ -107,8 +113,6 @@ class RunDatabase <<@Database>> {
     +{static} getInstance(context : Context) : RunDatabase
     +runDao() : RunDao
     +bestEffortDao() : BestEffortDao
-    -{static} MIGRATION_1_2 : Migration
-    -{static} MIGRATION_2_3 : Migration
 }
 
 interface RunDao <<@Dao>> {
@@ -282,6 +286,7 @@ RunStatsActivity ..> LocationTrackingService : sends ACTION_STOP
 RunStatsActivity ..> RunStats : collects
 
 RunAdapter ..> UnitPreference : reads
+MapFragment ..> RunDatabase : uses
 AchievementsFragment ..> RunDatabase : uses
 AchievementsFragment ..> BestEffort : displays
 AchievementsFragment ..> UnitPreference : reads
