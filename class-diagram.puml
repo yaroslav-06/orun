@@ -24,7 +24,10 @@ class HomeFragment {
 }
 
 class MapFragment {
+    -map : MapView
     +onCreateView(...) : View
+    +onResume()
+    +onPause()
 }
 
 class AchievementsFragment {

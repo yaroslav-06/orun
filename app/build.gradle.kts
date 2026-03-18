@@ -4,7 +4,7 @@ plugins {
 }
 
 android {
-    namespace = "com.yarick.orun"
+    namespace = "com.yarick.orunner"
     compileSdk {
         version = release(36) {
             minorApiLevel = 1
@@ -12,7 +12,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.yarick.orun"
+        applicationId = "com.yarick.orunner"
         minSdk = 24
         targetSdk = 36
         versionCode = 1
@@ -55,6 +55,7 @@ dependencies {
     implementation(libs.play.services.location)
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.androidx.recyclerview)
+    implementation("org.osmdroid:osmdroid-android:6.1.20")
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

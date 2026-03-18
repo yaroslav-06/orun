@@ -77,7 +77,7 @@
             android:layout_marginBottom="8dp"
             android:visibility="gone" />
 
-        <com.yarick.orun.SplitsView
+        <com.yarick.orunner.SplitsView
             android:id="@+id/splitsView"
             android:layout_width="match_parent"
             android:layout_height="wrap_content" />
