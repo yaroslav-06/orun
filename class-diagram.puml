@@ -36,6 +36,16 @@ class MapFragment {
     -goToMyLocation()
 }
 
+class "MapFragment.DoubleTapZoomOverlay" {
+    -pixelsPerZoomLevel : Float
+    -isDoubleTapDragging : Boolean
+    -startY : Float
+    -startZoomLevel : Double
+    -totalDragDistance : Float
+    -gestureDetector : GestureDetectorCompat
+    +onTouchEvent(event, mapView) : Boolean
+}
+
 class AchievementsFragment {
     -scope : CoroutineScope
     +onCreateView(...) : View
@@ -287,6 +297,7 @@ RunStatsActivity ..> RunStats : collects
 
 RunAdapter ..> UnitPreference : reads
 MapFragment ..> RunDatabase : uses
+MapFragment +-- "MapFragment.DoubleTapZoomOverlay"
 AchievementsFragment ..> RunDatabase : uses
 AchievementsFragment ..> BestEffort : displays
 AchievementsFragment ..> UnitPreference : reads

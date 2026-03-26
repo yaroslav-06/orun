@@ -10,6 +10,6 @@
         android:title="Map" />
     <item
         android:id="@+id/nav_achievements"
-        android:icon="@drawable/ic_star"
+        android:icon="@drawable/ic_trophy"
         android:title="Achievements" />
 </menu>

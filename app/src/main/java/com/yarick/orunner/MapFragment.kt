@@ -6,9 +6,12 @@ import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
 import android.os.Bundle
+import android.view.GestureDetector
 import android.view.LayoutInflater
+import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.view.GestureDetectorCompat
 import androidx.fragment.app.Fragment
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
@@ -24,6 +27,7 @@ import kotlinx.coroutines.withContext
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
+import org.osmdroid.views.overlay.Overlay
 import org.osmdroid.views.overlay.mylocation.GpsMyLocationProvider
 import org.osmdroid.views.overlay.mylocation.MyLocationNewOverlay
 
@@ -43,6 +47,7 @@ class MapFragment : Fragment() {
         map.setBuiltInZoomControls(false)
         myLocationOverlay = MyLocationNewOverlay(GpsMyLocationProvider(requireContext()), map)
         map.overlays.add(myLocationOverlay)
+        map.overlays.add(DoubleTapZoomOverlay())
 
         val dp = resources.displayMetrics.density
         val size = (18 * dp).toInt()
@@ -105,6 +110,51 @@ class MapFragment : Fragment() {
             if (location != null) {
                 map.controller.animateTo(GeoPoint(location.latitude, location.longitude))
             }
+        }
+    }
+
+    private inner class DoubleTapZoomOverlay : Overlay() {
+        private val pixelsPerZoomLevel = 150f * resources.displayMetrics.density
+
+        private var isDoubleTapDragging = false
+        private var startY = 0f
+        private var startZoomLevel = 0.0
+        private var totalDragDistance = 0f
+
+        private val gestureDetector = GestureDetectorCompat(
+            requireContext(),
+            object : GestureDetector.SimpleOnGestureListener() {
+                override fun onDoubleTap(e: MotionEvent): Boolean {
+                    isDoubleTapDragging = true
+                    startY = e.y
+                    startZoomLevel = map.zoomLevelDouble
+                    totalDragDistance = 0f
+                    return true
+                }
+            }
+        ).also { it.setIsLongpressEnabled(false) }
+
+        override fun onTouchEvent(event: MotionEvent, mapView: MapView): Boolean {
+            if (event.pointerCount > 1) {
+                isDoubleTapDragging = false
+                return false
+            }
+            gestureDetector.onTouchEvent(event)
+            if (isDoubleTapDragging) {
+                when (event.actionMasked) {
+                    MotionEvent.ACTION_MOVE -> {
+                        val deltaY = event.y - startY
+                        totalDragDistance += Math.abs(event.y - startY)
+                        map.controller.setZoom(startZoomLevel + (deltaY / pixelsPerZoomLevel))
+                    }
+                    MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                        if (totalDragDistance < 10f) map.controller.zoomIn()
+                        isDoubleTapDragging = false
+                    }
+                }
+                return true
+            }
+            return false
         }
     }
 }
