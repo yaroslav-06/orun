@@ -148,6 +148,52 @@
 
     </LinearLayout>
 
+    <LinearLayout
+        android:id="@+id/llGoalProgress"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="28dp"
+        android:orientation="vertical"
+        android:visibility="gone">
+
+        <TextView
+            android:id="@+id/tvGoalLabel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:text="Goal progress"
+            android:textSize="12sp"
+            android:textColor="?attr/colorOnSurfaceVariant" />
+
+        <ProgressBar
+            android:id="@+id/pbGoalProgress"
+            style="@style/Widget.AppCompat.ProgressBar.Horizontal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:max="100"
+            android:progress="0" />
+
+        <TextView
+            android:id="@+id/tvGoalPercent"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="2dp"
+            android:text="0% complete"
+            android:textSize="12sp" />
+
+        <TextView
+            android:id="@+id/tvGoalEta"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="4dp"
+            android:text=""
+            android:textSize="14sp" />
+
+    </LinearLayout>
+
     <Button
         android:id="@+id/btnStop"
         android:layout_width="wrap_content"

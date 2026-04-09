@@ -43,6 +43,9 @@
         <activity
             android:name=".DistanceEffortsActivity"
             android:exported="false" />
+        <activity
+            android:name=".RunGoalSetupActivity"
+            android:exported="false" />
         <service
             android:name=".service.LocationTrackingService"
             android:foregroundServiceType="location"

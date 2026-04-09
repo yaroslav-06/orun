@@ -1,6 +1,7 @@
 package com.yarick.orunner
 
 import android.Manifest
+import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
@@ -45,13 +46,28 @@ class HomeFragment : Fragment() {
             ) {
                 requestBackgroundLocationLauncher.launch(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
             }
-            startRun()
+            launchGoalSetup()
         }
     }
 
     private val requestBackgroundLocationLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { /* background permission result; run already started */ }
+
+    private val goalSetupLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            val data = result.data
+            val goalDistanceMeters = if (data?.hasExtra(RunGoalSetupActivity.EXTRA_GOAL_DISTANCE_METERS) == true)
+                data.getFloatExtra(RunGoalSetupActivity.EXTRA_GOAL_DISTANCE_METERS, 0f)
+            else null
+            val goalDurationMs = if (data?.hasExtra(RunGoalSetupActivity.EXTRA_GOAL_DURATION_MS) == true)
+                data.getLongExtra(RunGoalSetupActivity.EXTRA_GOAL_DURATION_MS, 0L)
+            else null
+            startRun(goalDistanceMeters, goalDurationMs)
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -85,7 +101,7 @@ class HomeFragment : Fragment() {
                     ) {
                         requestBackgroundLocationLauncher.launch(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
                     }
-                    startRun()
+                    launchGoalSetup()
                 } else {
                     requestPermissionLauncher.launch(
                         arrayOf(
@@ -139,7 +155,11 @@ class HomeFragment : Fragment() {
         )
     }
 
-    private fun startRun() {
+    private fun launchGoalSetup() {
+        goalSetupLauncher.launch(Intent(requireContext(), RunGoalSetupActivity::class.java))
+    }
+
+    private fun startRun(goalDistanceMeters: Float?, goalDurationMs: Long?) {
         scope.launch {
             val startTime = System.currentTimeMillis()
             val runId = RunDatabase.getInstance(requireContext())
@@ -158,7 +178,11 @@ class HomeFragment : Fragment() {
             }
 
             requireActivity().runOnUiThread {
-                startActivity(Intent(requireContext(), RunStatsActivity::class.java))
+                val statsIntent = Intent(requireContext(), RunStatsActivity::class.java).apply {
+                    goalDistanceMeters?.let { putExtra(RunGoalSetupActivity.EXTRA_GOAL_DISTANCE_METERS, it) }
+                    goalDurationMs?.let { putExtra(RunGoalSetupActivity.EXTRA_GOAL_DURATION_MS, it) }
+                }
+                startActivity(statsIntent)
             }
         }
     }

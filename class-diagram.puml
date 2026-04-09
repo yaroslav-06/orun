@@ -19,7 +19,8 @@ class HomeFragment {
     +onCreateView(...) : View
     +onResume()
     +onPause()
-    -startRun()
+    -launchGoalSetup()
+    -startRun(goalDistanceMeters : Float?, goalDurationMs : Long?)
     -updateFab(stats : RunStats)
 }
 
@@ -36,7 +37,7 @@ class MapFragment {
     -goToMyLocation()
 }
 
-class "MapFragment.DoubleTapZoomOverlay" {
+class DoubleTapZoomOverlay {
     -pixelsPerZoomLevel : Float
     -isDoubleTapDragging : Boolean
     -startY : Float
@@ -73,10 +74,18 @@ class RunAdapter {
     -formatDate(ms : Long) : String
 }
 
+class RunGoalSetupActivity {
+    +{static} EXTRA_GOAL_DISTANCE_METERS : String
+    +{static} EXTRA_GOAL_DURATION_MS : String
+    +onCreate(savedInstanceState : Bundle?)
+    +onSupportNavigateUp() : Boolean
+}
+
 class RunStatsActivity {
     -scope : CoroutineScope
     -frozenDurationSec : Long?
     +onCreate(savedInstanceState : Bundle?)
+    -updateGoalProgress(stats : RunStats, elapsedMs : Long, goalDistMeters : Float?, goalDurMs : Long?, pbGoalProgress : ProgressBar, tvGoalPercent : TextView, tvGoalEta : TextView)
 }
 
 class LocationTrackingService {
@@ -255,6 +264,7 @@ MainActivity --|> AppCompatActivity
 HomeFragment --|> Fragment
 MapFragment --|> Fragment
 AchievementsFragment --|> Fragment
+RunGoalSetupActivity --|> AppCompatActivity
 RunStatsActivity --|> AppCompatActivity
 RunDetailActivity --|> AppCompatActivity
 SettingsActivity --|> AppCompatActivity
@@ -278,11 +288,15 @@ MainActivity *-- AchievementsFragment : hosts
 HomeFragment ..> RunDatabase : uses
 HomeFragment ..> Run : creates
 HomeFragment ..> LocationTrackingService : starts
+HomeFragment ..> RunGoalSetupActivity : launches
 HomeFragment ..> RunStatsActivity : opens
 HomeFragment ..> RunDetailActivity : opens
 HomeFragment ..> SettingsActivity : opens
 HomeFragment ..> RunStats : observes
 HomeFragment *-- RunAdapter : uses
+
+RunGoalSetupActivity ..> UnitPreference : reads
+RunStatsActivity ..> RunGoalSetupActivity : reads extras from
 
 RunDetailActivity ..> RunDatabase : uses
 RunDetailActivity ..> Run : displays
@@ -297,7 +311,7 @@ RunStatsActivity ..> RunStats : collects
 
 RunAdapter ..> UnitPreference : reads
 MapFragment ..> RunDatabase : uses
-MapFragment +-- "MapFragment.DoubleTapZoomOverlay"
+MapFragment *-- DoubleTapZoomOverlay : inner class
 AchievementsFragment ..> RunDatabase : uses
 AchievementsFragment ..> BestEffort : displays
 AchievementsFragment ..> UnitPreference : reads
