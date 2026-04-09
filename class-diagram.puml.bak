@@ -1,0 +1,347 @@
+@startuml
+
+abstract class Application <<Android>>
+abstract class AppCompatActivity <<Android>>
+abstract class Fragment <<Android>>
+abstract class Service <<Android>>
+abstract class RoomDatabase <<Room>>
+
+class MainActivity {
+    +onCreate(savedInstanceState : Bundle?)
+}
+
+class HomeFragment {
+    -adapter : RunAdapter
+    -scope : CoroutineScope
+    -mainScope : CoroutineScope
+    -observeJob : Job
+    -listJob : Job
+    +onCreateView(...) : View
+    +onResume()
+    +onPause()
+    -launchGoalSetup()
+    -startRun(goalDistanceMeters : Float?, goalDurationMs : Long?)
+    -updateFab(stats : RunStats)
+}
+
+class MapFragment {
+    -map : MapView
+    -fusedLocationClient : FusedLocationProviderClient
+    -fabMyLocation : FloatingActionButton
+    -myLocationOverlay : MyLocationNewOverlay
+    -scope : CoroutineScope
+    +onCreateView(...) : View
+    +onResume()
+    +onPause()
+    +onDestroyView()
+    -goToMyLocation()
+}
+
+class DoubleTapZoomOverlay {
+    -pixelsPerZoomLevel : Float
+    -isDoubleTapDragging : Boolean
+    -startY : Float
+    -startZoomLevel : Double
+    -totalDragDistance : Float
+    -gestureDetector : GestureDetectorCompat
+    +onTouchEvent(event, mapView) : Boolean
+}
+
+class AchievementsFragment {
+    -scope : CoroutineScope
+    +onCreateView(...) : View
+    +onViewCreated(view : View, savedInstanceState : Bundle?)
+    +onDestroyView()
+}
+
+class RunDetailActivity {
+    -scope : CoroutineScope
+    -runId : Long
+    +btnDeleteRun : Button
+    +onCreate(savedInstanceState : Bundle?)
+    -computeSplits(points : List<LocationPoint>, metric : Boolean) : List<Split>
+    +onSupportNavigateUp() : Boolean
+    +onDestroy()
+}
+
+class RunAdapter {
+    -runs : List<Run>
+    -onClick : (Run) -> Unit
+    +submitList(newRuns : List<Run>)
+    +onCreateViewHolder(...) : ViewHolder
+    +onBindViewHolder(...)
+    +getItemCount() : Int
+    -formatDate(ms : Long) : String
+}
+
+class RunGoalSetupActivity {
+    +{static} EXTRA_GOAL_DISTANCE_METERS : String
+    +{static} EXTRA_GOAL_DURATION_MS : String
+    +onCreate(savedInstanceState : Bundle?)
+    +onSupportNavigateUp() : Boolean
+}
+
+class RunStatsActivity {
+    -scope : CoroutineScope
+    -frozenDurationSec : Long?
+    +onCreate(savedInstanceState : Bundle?)
+    -updateGoalProgress(stats : RunStats, elapsedMs : Long, goalDistMeters : Float?, goalDurMs : Long?, pbGoalProgress : ProgressBar, tvGoalPercent : TextView, tvGoalEta : TextView)
+}
+
+class LocationTrackingService {
+    +{static} ACTION_START : String
+    +{static} ACTION_STOP : String
+    +{static} EXTRA_RUN_ID : String
+    +{static} EXTRA_START_TIME : String
+    +{static} CHANNEL_ID : String
+    +{static} stats : MutableStateFlow<RunStats>
+    -fusedLocationClient : FusedLocationProviderClient
+    -scope : CoroutineScope
+    -runId : Long
+    -lastSavedLocation : Location?
+    -lastAltitude : Double?
+    -distanceMeters : Float
+    -elevationGainMeters : Float
+    -elevationLossMeters : Float
+    -paceBuffer : ArrayDeque<Pair<Long,Float>>
+    -tts : TextToSpeech?
+    -ttsReady : Boolean
+    -voiceoverEnabled : Boolean
+    -announceIntervalMeters : Float
+    -nextAnnouncementMeters : Float
+    -splitBoundaryMeters : Float
+    -splitBoundaryTimeMs : Long
+    -isMetric : Boolean
+    +onCreate()
+    +onStartCommand(intent : Intent, flags : Int, startId : Int) : Int
+    +onDestroy()
+    -startLocationUpdates()
+    -processLocation(location : Location)
+    -calculateCurrentPace() : Float
+    -stopLocationUpdates()
+    -buildNotification() : Notification
+    -announceStats()
+    -intervalIndexToMeters(index : Int, metric : Boolean) : Float
+    -formatPaceSpoken(secPerKm : Float, metric : Boolean) : String
+    -formatDurationSpoken(totalSec : Long) : String
+    -formatElevationSpoken(meters : Float, metric : Boolean) : String
+    -formatDistanceSpoken(meters : Float, metric : Boolean) : String
+}
+
+class RunDatabase <<@Database>> {
+    +{static} getInstance(context : Context) : RunDatabase
+    +runDao() : RunDao
+    +bestEffortDao() : BestEffortDao
+}
+
+interface RunDao <<@Dao>> {
+    +insertRun(run : Run) : Long
+    +insertPoint(point : LocationPoint)
+    +updateRun(run : Run)
+    +getPointsForRun(runId : Long) : List<LocationPoint>
+    +getAllFinishedRuns() : Flow<List<Run>>
+    +getRunById(id : Long) : Run?
+    +deletePointsForRun(runId : Long)
+    +deleteRunById(id : Long)
+}
+
+class Run <<@Entity: runs>> {
+    +id : Long
+    +startTime : Long
+    +endTime : Long?
+    +totalDistanceMeters : Float
+    +elevationGainMeters : Float
+    +elevationLossMeters : Float
+    +avgHeartRate : Int?
+    +maxHeartRate : Int?
+    +isAnalyzed : Boolean
+}
+
+class BestEffort <<@Entity: best_efforts>> {
+    +id : Long
+    +distanceKey : String
+    +distanceMeters : Double
+    +runId : Long
+    +durationMs : Long
+}
+
+interface BestEffortDao <<@Dao>> {
+    +insert(effort : BestEffort)
+    +delete(effort : BestEffort)
+    +getByDistance(key : String) : List<BestEffort>
+    +getByRun(runId : Long) : List<BestEffort>
+    +getAllBestPerDistance() : List<BestEffort>
+}
+
+object BestEffortAnalyzer {
+    +{static} DISTANCES : List<Pair<String, Double>>
+    +{static} analyze(run : Run, points : List<LocationPoint>, dao : BestEffortDao, runDao : RunDao)
+}
+
+class LocationPoint <<@Entity: location_points>> {
+    +id : Long
+    +runId : Long
+    +latitude : Double
+    +longitude : Double
+    +altitude : Double
+    +timestamp : Long
+    +heartRate : Int?
+    +cadence : Int?
+}
+
+class RunStats <<data class>> {
+    +distanceMeters : Float
+    +startTime : Long
+    +elevationGainMeters : Float
+    +elevationLossMeters : Float
+    +currentPaceSecPerKm : Float
+    +heartRate : Int?
+    +isFinished : Boolean
+}
+
+class OrunApp {
+    +onCreate()
+}
+
+object UnitPreference {
+    -{static} PREFS_NAME : String
+    -{static} KEY_METRIC : String
+    +{static} isMetric(context : Context) : Boolean
+    +{static} setMetric(context : Context, metric : Boolean)
+}
+
+object VoiceoverPreference {
+    +{static} isEnabled(context : Context) : Boolean / setEnabled(context, v)
+    +{static} getIntervalIndex(context : Context) : Int / setIntervalIndex(context, v)
+    +{static} getStatDistance(context : Context) : Boolean / setStatDistance(context, v)
+    +{static} getStatTime(context : Context) : Boolean / setStatTime(context, v)
+    +{static} getStatSplitPace(context : Context) : Boolean / setStatSplitPace(context, v)
+    +{static} getStatOverallPace(context : Context) : Boolean / setStatOverallPace(context, v)
+    +{static} getStatSplitElevation(context : Context) : Boolean / setStatSplitElevation(context, v)
+}
+
+class FormatUtils <<top-level functions>> {
+    +{static} formatDistance(meters : Float, metric : Boolean) : String
+    +{static} formatPace(distanceMeters : Float, durationMs : Long, metric : Boolean) : String
+    +{static} formatPaceFromSecPerKm(secPerKm : Float, metric : Boolean) : String
+    +{static} formatElevation(meters : Float, metric : Boolean) : String
+    +{static} formatDuration(durationMs : Long) : String
+    +{static} formatDurationSec(totalSec : Long) : String
+}
+
+class SettingsActivity {
+    +onCreate(savedInstanceState : Bundle?)
+    +onSupportNavigateUp() : Boolean
+}
+
+class DistanceEffortsActivity {
+    -scope : CoroutineScope
+    +onCreate(savedInstanceState : Bundle?)
+    +onSupportNavigateUp() : Boolean
+    +onDestroy()
+}
+
+class EffortAdapter {
+    -items : List<Pair<BestEffort, Long>>
+    -metric : Boolean
+    -onClick : (Long) -> Unit
+    +onCreateViewHolder(...) : ViewHolder
+    +onBindViewHolder(...)
+    +getItemCount() : Int
+}
+
+class SplitsView {
+    +{static} Split : data class (index : Int, secPerUnit : Float)
+    -splits : List<Split>
+    -metric : Boolean
+    +setSplits(splits : List<Split>, metric : Boolean)
+    +onMeasure(...)
+    +onDraw(canvas : Canvas)
+}
+
+OrunApp --|> Application
+MainActivity --|> AppCompatActivity
+HomeFragment --|> Fragment
+MapFragment --|> Fragment
+AchievementsFragment --|> Fragment
+RunGoalSetupActivity --|> AppCompatActivity
+RunStatsActivity --|> AppCompatActivity
+RunDetailActivity --|> AppCompatActivity
+SettingsActivity --|> AppCompatActivity
+DistanceEffortsActivity --|> AppCompatActivity
+SplitsView --|> View
+LocationTrackingService --|> Service
+RunDatabase --|> RoomDatabase
+
+RunDatabase *-- RunDao : contains
+RunDatabase *-- BestEffortDao : contains
+RunDao ..> Run : operates on
+RunDao ..> LocationPoint : operates on
+BestEffortDao ..> BestEffort : operates on
+LocationPoint "many" --> "1" Run : runId FK
+BestEffort "many" --> "1" Run : runId FK
+
+MainActivity *-- HomeFragment : hosts
+MainActivity *-- MapFragment : hosts
+MainActivity *-- AchievementsFragment : hosts
+
+HomeFragment ..> RunDatabase : uses
+HomeFragment ..> Run : creates
+HomeFragment ..> LocationTrackingService : starts
+HomeFragment ..> RunGoalSetupActivity : launches
+HomeFragment ..> RunStatsActivity : opens
+HomeFragment ..> RunDetailActivity : opens
+HomeFragment ..> SettingsActivity : opens
+HomeFragment ..> RunStats : observes
+HomeFragment *-- RunAdapter : uses
+
+RunGoalSetupActivity ..> UnitPreference : reads
+RunStatsActivity ..> RunGoalSetupActivity : reads extras from
+
+RunDetailActivity ..> RunDatabase : uses
+RunDetailActivity ..> Run : displays
+RunDetailActivity ..> LocationPoint : computes splits from
+RunDetailActivity ..> BestEffortAnalyzer : triggers analysis
+RunDetailActivity ..> BestEffort : displays
+RunDetailActivity *-- SplitsView : uses
+RunAdapter ..> Run : displays
+
+RunStatsActivity ..> LocationTrackingService : sends ACTION_STOP
+RunStatsActivity ..> RunStats : collects
+
+RunAdapter ..> UnitPreference : reads
+MapFragment ..> RunDatabase : uses
+MapFragment *-- DoubleTapZoomOverlay : inner class
+AchievementsFragment ..> RunDatabase : uses
+AchievementsFragment ..> BestEffort : displays
+AchievementsFragment ..> UnitPreference : reads
+AchievementsFragment ..> FormatUtils : uses
+AchievementsFragment ..> DistanceEffortsActivity : opens
+
+DistanceEffortsActivity ..> RunDatabase : uses
+DistanceEffortsActivity ..> BestEffort : displays
+DistanceEffortsActivity ..> RunDetailActivity : opens
+DistanceEffortsActivity *-- EffortAdapter : uses
+EffortAdapter ..> BestEffort : displays
+EffortAdapter ..> FormatUtils : uses
+EffortAdapter ..> UnitPreference : reads
+
+RunDetailActivity ..> DistanceEffortsActivity : opens
+
+RunDetailActivity ..> UnitPreference : reads
+RunStatsActivity ..> UnitPreference : reads
+SettingsActivity ..> UnitPreference : reads/writes
+SettingsActivity ..> VoiceoverPreference : reads/writes
+
+RunAdapter ..> FormatUtils : uses
+RunDetailActivity ..> FormatUtils : uses
+RunStatsActivity ..> FormatUtils : uses
+
+LocationTrackingService ..> VoiceoverPreference : reads
+LocationTrackingService ..> UnitPreference : reads
+LocationTrackingService ..> RunDatabase : uses
+LocationTrackingService ..> LocationPoint : creates & saves
+LocationTrackingService ..> Run : updates on stop
+LocationTrackingService *-- RunStats : emits via StateFlow
+
+@enduml

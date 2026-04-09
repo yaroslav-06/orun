@@ -1,0 +1,92 @@
+@startuml Data Layer
+
+abstract class RoomDatabase <<Android>>
+
+class RunDatabase <<@Database>> {
+    +{static} getInstance(context : Context) : RunDatabase
+    +runDao() : RunDao
+    +bestEffortDao() : BestEffortDao
+}
+
+interface RunDao <<@Dao>> {
+    +insertRun(run : Run) : Long
+    +insertPoint(point : LocationPoint)
+    +updateRun(run : Run)
+    +getPointsForRun(runId : Long) : List<LocationPoint>
+    +getAllFinishedRuns() : Flow<List<Run>>
+    +getRunById(id : Long) : Run?
+    +deletePointsForRun(runId : Long)
+    +deleteRunById(id : Long)
+}
+
+interface BestEffortDao <<@Dao>> {
+    +insert(effort : BestEffort)
+    +delete(effort : BestEffort)
+    +getByDistance(key : String) : List<BestEffort>
+    +getByRun(runId : Long) : List<BestEffort>
+    +getAllBestPerDistance() : List<BestEffort>
+}
+
+class Run <<@Entity: runs>> {
+    +id : Long
+    +startTime : Long
+    +endTime : Long?
+    +totalDistanceMeters : Float
+    +elevationGainMeters : Float
+    +elevationLossMeters : Float
+    +avgHeartRate : Int?
+    +maxHeartRate : Int?
+    +isAnalyzed : Boolean
+}
+
+class BestEffort <<@Entity: best_efforts>> {
+    +id : Long
+    +distanceKey : String
+    +distanceMeters : Double
+    +runId : Long
+    +durationMs : Long
+}
+
+class LocationPoint <<@Entity: location_points>> {
+    +id : Long
+    +runId : Long
+    +latitude : Double
+    +longitude : Double
+    +altitude : Double
+    +timestamp : Long
+    +heartRate : Int?
+    +cadence : Int?
+}
+
+class RunStats <<data class>> {
+    +distanceMeters : Float
+    +startTime : Long
+    +elevationGainMeters : Float
+    +elevationLossMeters : Float
+    +currentPaceSecPerKm : Float
+    +heartRate : Int?
+    +isFinished : Boolean
+}
+
+object BestEffortAnalyzer {
+    +{static} DISTANCES : List<Pair<String, Double>>
+    +{static} analyze(run : Run, points : List<LocationPoint>, dao : BestEffortDao, runDao : RunDao)
+}
+
+RunDatabase --|> RoomDatabase
+RunDatabase *-- RunDao : contains
+RunDatabase *-- BestEffortDao : contains
+
+RunDao ..> Run : operates on
+RunDao ..> LocationPoint : operates on
+BestEffortDao ..> BestEffort : operates on
+
+LocationPoint "many" --> "1" Run : runId FK
+BestEffort "many" --> "1" Run : runId FK
+
+BestEffortAnalyzer ..> Run
+BestEffortAnalyzer ..> LocationPoint
+BestEffortAnalyzer ..> BestEffortDao
+BestEffortAnalyzer ..> RunDao
+
+@enduml

@@ -1,0 +1,125 @@
+@startuml Activities
+
+abstract class AppCompatActivity <<Android>>
+abstract class View <<Android>>
+
+class MainActivity {
+    +onCreate(savedInstanceState : Bundle?)
+}
+
+class RunDetailActivity {
+    -scope : CoroutineScope
+    -runId : Long
+    +btnDeleteRun : Button
+    +onCreate(savedInstanceState : Bundle?)
+    -computeSplits(points : List<LocationPoint>, metric : Boolean) : List<Split>
+    +onSupportNavigateUp() : Boolean
+    +onDestroy()
+}
+
+class RunStatsActivity {
+    -scope : CoroutineScope
+    -frozenDurationSec : Long?
+    +onCreate(savedInstanceState : Bundle?)
+    -updateGoalProgress(stats : RunStats, elapsedMs : Long, goalDistMeters : Float?, goalDurMs : Long?, pbGoalProgress : ProgressBar, tvGoalPercent : TextView, tvGoalEta : TextView)
+}
+
+class RunGoalSetupActivity {
+    +{static} EXTRA_GOAL_DISTANCE_METERS : String
+    +{static} EXTRA_GOAL_DURATION_MS : String
+    +onCreate(savedInstanceState : Bundle?)
+    +onSupportNavigateUp() : Boolean
+}
+
+class SettingsActivity {
+    +onCreate(savedInstanceState : Bundle?)
+    +onSupportNavigateUp() : Boolean
+}
+
+class DistanceEffortsActivity {
+    -scope : CoroutineScope
+    +onCreate(savedInstanceState : Bundle?)
+    +onSupportNavigateUp() : Boolean
+    +onDestroy()
+}
+
+class EffortAdapter {
+    -items : List<Pair<BestEffort, Long>>
+    -metric : Boolean
+    -onClick : (Long) -> Unit
+    +onCreateViewHolder(...) : ViewHolder
+    +onBindViewHolder(...)
+    +getItemCount() : Int
+}
+
+class SplitsView {
+    +{static} Split : data class (index : Int, secPerUnit : Float)
+    -splits : List<Split>
+    -metric : Boolean
+    +setSplits(splits : List<Split>, metric : Boolean)
+    +onMeasure(...)
+    +onDraw(canvas : Canvas)
+}
+
+' ── Stubs referencing data.puml ──────────────────────────────────────────────
+class RunDatabase <<see: data.puml>> #DDDDDD
+class Run <<see: data.puml>> #DDDDDD
+class LocationPoint <<see: data.puml>> #DDDDDD
+class BestEffort <<see: data.puml>> #DDDDDD
+class RunStats <<see: data.puml>> #DDDDDD
+class BestEffortAnalyzer <<see: data.puml>> #DDDDDD
+
+' ── Stubs referencing services.puml ──────────────────────────────────────────
+class LocationTrackingService <<see: services.puml>> #DDDDDD
+class UnitPreference <<see: services.puml>> #DDDDDD
+class VoiceoverPreference <<see: services.puml>> #DDDDDD
+class FormatUtils <<see: services.puml>> #DDDDDD
+
+' ── Stubs referencing fragments.puml ─────────────────────────────────────────
+class HomeFragment <<see: fragments.puml>> #DDDDDD
+class MapFragment <<see: fragments.puml>> #DDDDDD
+class AchievementsFragment <<see: fragments.puml>> #DDDDDD
+
+MainActivity --|> AppCompatActivity
+RunDetailActivity --|> AppCompatActivity
+RunStatsActivity --|> AppCompatActivity
+RunGoalSetupActivity --|> AppCompatActivity
+SettingsActivity --|> AppCompatActivity
+DistanceEffortsActivity --|> AppCompatActivity
+SplitsView --|> View
+
+MainActivity *-- HomeFragment : hosts
+MainActivity *-- MapFragment : hosts
+MainActivity *-- AchievementsFragment : hosts
+
+RunDetailActivity ..> RunDatabase : uses
+RunDetailActivity ..> Run : displays
+RunDetailActivity ..> LocationPoint : computes splits from
+RunDetailActivity ..> BestEffortAnalyzer : triggers analysis
+RunDetailActivity ..> BestEffort : displays
+RunDetailActivity *-- SplitsView : uses
+RunDetailActivity ..> UnitPreference : reads
+RunDetailActivity ..> FormatUtils : uses
+RunDetailActivity ..> DistanceEffortsActivity : opens
+
+RunStatsActivity ..> LocationTrackingService : sends ACTION_STOP
+RunStatsActivity ..> RunStats : collects
+RunStatsActivity ..> UnitPreference : reads
+RunStatsActivity ..> FormatUtils : uses
+RunStatsActivity ..> RunGoalSetupActivity : reads extras from
+
+RunGoalSetupActivity ..> UnitPreference : reads
+
+SettingsActivity ..> UnitPreference : reads/writes
+SettingsActivity ..> VoiceoverPreference : reads/writes
+
+DistanceEffortsActivity ..> RunDatabase : uses
+DistanceEffortsActivity ..> BestEffort : displays
+DistanceEffortsActivity ..> RunDetailActivity : opens
+DistanceEffortsActivity *-- EffortAdapter : uses
+
+EffortAdapter ..> BestEffort : displays
+EffortAdapter ..> FormatUtils : uses
+EffortAdapter ..> UnitPreference : reads
+
+@enduml

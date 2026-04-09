@@ -1,0 +1,92 @@
+@startuml Services & Utilities
+
+abstract class Application <<Android>>
+abstract class Service <<Android>>
+
+class OrunApp {
+    +onCreate()
+}
+
+class LocationTrackingService {
+    +{static} ACTION_START : String
+    +{static} ACTION_STOP : String
+    +{static} EXTRA_RUN_ID : String
+    +{static} EXTRA_START_TIME : String
+    +{static} CHANNEL_ID : String
+    +{static} stats : MutableStateFlow<RunStats>
+    -fusedLocationClient : FusedLocationProviderClient
+    -scope : CoroutineScope
+    -runId : Long
+    -lastSavedLocation : Location?
+    -lastAltitude : Double?
+    -distanceMeters : Float
+    -elevationGainMeters : Float
+    -elevationLossMeters : Float
+    -paceBuffer : ArrayDeque<Pair<Long,Float>>
+    -tts : TextToSpeech?
+    -ttsReady : Boolean
+    -voiceoverEnabled : Boolean
+    -announceIntervalMeters : Float
+    -nextAnnouncementMeters : Float
+    -splitBoundaryMeters : Float
+    -splitBoundaryTimeMs : Long
+    -isMetric : Boolean
+    +onCreate()
+    +onStartCommand(intent : Intent, flags : Int, startId : Int) : Int
+    +onDestroy()
+    -startLocationUpdates()
+    -processLocation(location : Location)
+    -calculateCurrentPace() : Float
+    -stopLocationUpdates()
+    -buildNotification() : Notification
+    -announceStats()
+    -intervalIndexToMeters(index : Int, metric : Boolean) : Float
+    -formatPaceSpoken(secPerKm : Float, metric : Boolean) : String
+    -formatDurationSpoken(totalSec : Long) : String
+    -formatElevationSpoken(meters : Float, metric : Boolean) : String
+    -formatDistanceSpoken(meters : Float, metric : Boolean) : String
+}
+
+object UnitPreference {
+    -{static} PREFS_NAME : String
+    -{static} KEY_METRIC : String
+    +{static} isMetric(context : Context) : Boolean
+    +{static} setMetric(context : Context, metric : Boolean)
+}
+
+object VoiceoverPreference {
+    +{static} isEnabled(context : Context) : Boolean / setEnabled(context, v)
+    +{static} getIntervalIndex(context : Context) : Int / setIntervalIndex(context, v)
+    +{static} getStatDistance(context : Context) : Boolean / setStatDistance(context, v)
+    +{static} getStatTime(context : Context) : Boolean / setStatTime(context, v)
+    +{static} getStatSplitPace(context : Context) : Boolean / setStatSplitPace(context, v)
+    +{static} getStatOverallPace(context : Context) : Boolean / setStatOverallPace(context, v)
+    +{static} getStatSplitElevation(context : Context) : Boolean / setStatSplitElevation(context, v)
+}
+
+class FormatUtils <<top-level functions>> {
+    +{static} formatDistance(meters : Float, metric : Boolean) : String
+    +{static} formatPace(distanceMeters : Float, durationMs : Long, metric : Boolean) : String
+    +{static} formatPaceFromSecPerKm(secPerKm : Float, metric : Boolean) : String
+    +{static} formatElevation(meters : Float, metric : Boolean) : String
+    +{static} formatDuration(durationMs : Long) : String
+    +{static} formatDurationSec(totalSec : Long) : String
+}
+
+' ── Stubs referencing data.puml ──────────────────────────────────────────────
+class RunDatabase <<see: data.puml>> #DDDDDD
+class RunStats <<see: data.puml>> #DDDDDD
+class LocationPoint <<see: data.puml>> #DDDDDD
+class Run <<see: data.puml>> #DDDDDD
+
+OrunApp --|> Application
+LocationTrackingService --|> Service
+
+LocationTrackingService ..> VoiceoverPreference : reads
+LocationTrackingService ..> UnitPreference : reads
+LocationTrackingService ..> RunDatabase : uses
+LocationTrackingService ..> LocationPoint : creates & saves
+LocationTrackingService ..> Run : updates on stop
+LocationTrackingService *-- RunStats : emits via StateFlow
+
+@enduml

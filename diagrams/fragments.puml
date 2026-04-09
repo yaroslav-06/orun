@@ -1,0 +1,105 @@
+@startuml Fragments
+
+abstract class Fragment <<Android>>
+
+class HomeFragment {
+    -adapter : RunAdapter
+    -scope : CoroutineScope
+    -mainScope : CoroutineScope
+    -observeJob : Job
+    -listJob : Job
+    +onCreateView(...) : View
+    +onResume()
+    +onPause()
+    -launchGoalSetup()
+    -startRun(goalDistanceMeters : Float?, goalDurationMs : Long?)
+    -updateFab(stats : RunStats)
+}
+
+class MapFragment {
+    -map : MapView
+    -fusedLocationClient : FusedLocationProviderClient
+    -fabMyLocation : FloatingActionButton
+    -myLocationOverlay : MyLocationNewOverlay
+    -scope : CoroutineScope
+    +onCreateView(...) : View
+    +onResume()
+    +onPause()
+    +onDestroyView()
+    -goToMyLocation()
+}
+
+class DoubleTapZoomOverlay {
+    -pixelsPerZoomLevel : Float
+    -isDoubleTapDragging : Boolean
+    -startY : Float
+    -startZoomLevel : Double
+    -totalDragDistance : Float
+    -gestureDetector : GestureDetectorCompat
+    +onTouchEvent(event, mapView) : Boolean
+}
+
+class AchievementsFragment {
+    -scope : CoroutineScope
+    +onCreateView(...) : View
+    +onViewCreated(view : View, savedInstanceState : Bundle?)
+    +onDestroyView()
+}
+
+class RunAdapter {
+    -runs : List<Run>
+    -onClick : (Run) -> Unit
+    +submitList(newRuns : List<Run>)
+    +onCreateViewHolder(...) : ViewHolder
+    +onBindViewHolder(...)
+    +getItemCount() : Int
+    -formatDate(ms : Long) : String
+}
+
+' ── Stubs referencing data.puml ──────────────────────────────────────────────
+class RunDatabase <<see: data.puml>> #DDDDDD
+class Run <<see: data.puml>> #DDDDDD
+class RunStats <<see: data.puml>> #DDDDDD
+class BestEffort <<see: data.puml>> #DDDDDD
+
+' ── Stubs referencing services.puml ──────────────────────────────────────────
+class UnitPreference <<see: services.puml>> #DDDDDD
+class FormatUtils <<see: services.puml>> #DDDDDD
+class LocationTrackingService <<see: services.puml>> #DDDDDD
+
+' ── Stubs referencing activities.puml ────────────────────────────────────────
+class RunStatsActivity <<see: activities.puml>> #DDDDDD
+class RunDetailActivity <<see: activities.puml>> #DDDDDD
+class SettingsActivity <<see: activities.puml>> #DDDDDD
+class DistanceEffortsActivity <<see: activities.puml>> #DDDDDD
+class RunGoalSetupActivity <<see: activities.puml>> #DDDDDD
+
+HomeFragment --|> Fragment
+MapFragment --|> Fragment
+AchievementsFragment --|> Fragment
+
+MapFragment *-- DoubleTapZoomOverlay : inner class
+
+HomeFragment ..> RunDatabase : uses
+HomeFragment ..> Run : creates
+HomeFragment ..> LocationTrackingService : starts
+HomeFragment ..> RunGoalSetupActivity : launches
+HomeFragment ..> RunStatsActivity : opens
+HomeFragment ..> RunDetailActivity : opens
+HomeFragment ..> SettingsActivity : opens
+HomeFragment ..> RunStats : observes
+HomeFragment *-- RunAdapter : uses
+
+RunAdapter ..> Run : displays
+RunAdapter ..> UnitPreference : reads
+RunAdapter ..> FormatUtils : uses
+
+MapFragment ..> RunDatabase : uses
+
+AchievementsFragment ..> RunDatabase : uses
+AchievementsFragment ..> BestEffort : displays
+AchievementsFragment ..> UnitPreference : reads
+AchievementsFragment ..> FormatUtils : uses
+AchievementsFragment ..> DistanceEffortsActivity : opens
+
+@enduml
