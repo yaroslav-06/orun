@@ -4,7 +4,12 @@ An Android app for tracking outdoor runs with GPS, real-time metrics, voice anno
 
 ---
 
-## Screenshots / Demo
+## Demo
+
+
+
+https://github.com/user-attachments/assets/f8be1b86-a387-4e4a-baf3-d0ead328bb6b
+
 
 
 ---
