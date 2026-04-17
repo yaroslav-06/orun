@@ -138,6 +138,18 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content" />
 
+            <CheckBox
+                android:id="@+id/cbStatGoalPercent"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Goal percentage" />
+
+            <CheckBox
+                android:id="@+id/cbStatGoalEta"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Est. distance / time" />
+
         </LinearLayout>
 
     </LinearLayout>

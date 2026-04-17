@@ -12,6 +12,8 @@ class LocationTrackingService {
     +{static} ACTION_STOP : String
     +{static} EXTRA_RUN_ID : String
     +{static} EXTRA_START_TIME : String
+    +{static} EXTRA_GOAL_DISTANCE_METERS : String
+    +{static} EXTRA_GOAL_DURATION_MS : String
     +{static} CHANNEL_ID : String
     +{static} stats : MutableStateFlow<RunStats>
     -fusedLocationClient : FusedLocationProviderClient
@@ -31,6 +33,8 @@ class LocationTrackingService {
     -splitBoundaryMeters : Float
     -splitBoundaryTimeMs : Long
     -isMetric : Boolean
+    -goalDistanceMeters : Float?
+    -goalDurationMs : Long?
     +onCreate()
     +onStartCommand(intent : Intent, flags : Int, startId : Int) : Int
     +onDestroy()
@@ -62,6 +66,8 @@ object VoiceoverPreference {
     +{static} getStatSplitPace(context : Context) : Boolean / setStatSplitPace(context, v)
     +{static} getStatOverallPace(context : Context) : Boolean / setStatOverallPace(context, v)
     +{static} getStatSplitElevation(context : Context) : Boolean / setStatSplitElevation(context, v)
+    +{static} getStatGoalPercent(context : Context) : Boolean / setStatGoalPercent(context, v)
+    +{static} getStatGoalEta(context : Context) : Boolean / setStatGoalEta(context, v)
 }
 
 class FormatUtils <<top-level functions>> {

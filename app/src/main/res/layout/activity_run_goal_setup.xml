@@ -22,20 +22,21 @@
         <LinearLayout
             android:id="@+id/llNoGoalContainer"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="48dp"
-            android:gravity="center_horizontal"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:gravity="center"
             android:orientation="vertical">
 
             <ImageView
                 android:layout_width="64dp"
                 android:layout_height="64dp"
+                android:layout_gravity="center"
                 android:src="@drawable/ic_trophy"
                 android:tint="?attr/colorPrimary" />
 
             <TextView
                 android:id="@+id/tvNoGoalTitle"
-                android:layout_width="wrap_content"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
                 android:gravity="center"
@@ -43,7 +44,7 @@
 
             <TextView
                 android:id="@+id/tvNoGoalSubtitle"
-                android:layout_width="wrap_content"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
                 android:gravity="center"
@@ -164,11 +165,13 @@
 
         </LinearLayout>
 
-        <!-- Spacer pushes chips + toggle + button to the bottom -->
+        <!-- Spacer pushes chips + toggle + button to the bottom (hidden when no-goal is active) -->
         <View
+            android:id="@+id/vSpacer"
             android:layout_width="0dp"
             android:layout_height="0dp"
-            android:layout_weight="1" />
+            android:layout_weight="1"
+            android:visibility="gone" />
 
         <!-- Preset chips — shown for Distance or Duration -->
         <LinearLayout

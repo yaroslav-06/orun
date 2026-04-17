@@ -170,6 +170,8 @@ class HomeFragment : Fragment() {
                 action = LocationTrackingService.ACTION_START
                 putExtra(LocationTrackingService.EXTRA_RUN_ID, runId)
                 putExtra(LocationTrackingService.EXTRA_START_TIME, startTime)
+                goalDistanceMeters?.let { putExtra(LocationTrackingService.EXTRA_GOAL_DISTANCE_METERS, it) }
+                goalDurationMs?.let { putExtra(LocationTrackingService.EXTRA_GOAL_DURATION_MS, it) }
             }
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 requireContext().startForegroundService(intent)

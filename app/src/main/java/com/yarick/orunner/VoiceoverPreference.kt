@@ -11,6 +11,8 @@ object VoiceoverPreference {
     private const val KEY_STAT_OVERALL_PACE = "voiceover_stat_overall_pace"
     private const val KEY_STAT_SPLIT_ELEVATION = "voiceover_stat_split_elevation"
     private const val KEY_STAT_DISTANCE = "voiceover_stat_distance"
+    private const val KEY_STAT_GOAL_PERCENT = "voiceover_stat_goal_percent"
+    private const val KEY_STAT_GOAL_ETA = "voiceover_stat_goal_eta"
 
     fun isEnabled(context: Context): Boolean =
         context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
@@ -67,4 +69,20 @@ object VoiceoverPreference {
     fun setStatDistance(context: Context, v: Boolean) =
         context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
             .edit().putBoolean(KEY_STAT_DISTANCE, v).apply()
+
+    fun getStatGoalPercent(context: Context): Boolean =
+        context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            .getBoolean(KEY_STAT_GOAL_PERCENT, true)
+
+    fun setStatGoalPercent(context: Context, v: Boolean) =
+        context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            .edit().putBoolean(KEY_STAT_GOAL_PERCENT, v).apply()
+
+    fun getStatGoalEta(context: Context): Boolean =
+        context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            .getBoolean(KEY_STAT_GOAL_ETA, true)
+
+    fun setStatGoalEta(context: Context, v: Boolean) =
+        context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            .edit().putBoolean(KEY_STAT_GOAL_ETA, v).apply()
 }

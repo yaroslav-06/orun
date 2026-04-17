@@ -90,6 +90,18 @@ class SettingsActivity : AppCompatActivity() {
         cbStatSplitElev.setOnCheckedChangeListener { _, checked ->
             VoiceoverPreference.setStatSplitElevation(this, checked)
         }
+
+        val cbStatGoalPercent = findViewById<CheckBox>(R.id.cbStatGoalPercent)
+        cbStatGoalPercent.isChecked = VoiceoverPreference.getStatGoalPercent(this)
+        cbStatGoalPercent.setOnCheckedChangeListener { _, checked ->
+            VoiceoverPreference.setStatGoalPercent(this, checked)
+        }
+
+        val cbStatGoalEta = findViewById<CheckBox>(R.id.cbStatGoalEta)
+        cbStatGoalEta.isChecked = VoiceoverPreference.getStatGoalEta(this)
+        cbStatGoalEta.setOnCheckedChangeListener { _, checked ->
+            VoiceoverPreference.setStatGoalEta(this, checked)
+        }
     }
 
     override fun onSupportNavigateUp(): Boolean {

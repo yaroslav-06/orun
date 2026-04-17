@@ -21,6 +21,8 @@ class RunStatsActivity {
     -scope : CoroutineScope
     -frozenDurationSec : Long?
     +onCreate(savedInstanceState : Bundle?)
+    +onCreateOptionsMenu(menu : Menu) : Boolean
+    +onOptionsItemSelected(item : MenuItem) : Boolean
     -updateGoalProgress(stats : RunStats, elapsedMs : Long, goalDistMeters : Float?, goalDurMs : Long?, pbGoalProgress : ProgressBar, tvGoalPercent : TextView, tvGoalEta : TextView)
 }
 
@@ -107,6 +109,7 @@ RunStatsActivity ..> RunStats : collects
 RunStatsActivity ..> UnitPreference : reads
 RunStatsActivity ..> FormatUtils : uses
 RunStatsActivity ..> RunGoalSetupActivity : reads extras from
+RunStatsActivity ..> SettingsActivity : opens
 
 RunGoalSetupActivity ..> UnitPreference : reads
 

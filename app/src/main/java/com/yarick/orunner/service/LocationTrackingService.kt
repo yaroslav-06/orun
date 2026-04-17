@@ -38,6 +38,8 @@ class LocationTrackingService : Service() {
         const val ACTION_STOP = "com.yarick.orunner.ACTION_STOP"
         const val EXTRA_RUN_ID = "extra_run_id"
         const val EXTRA_START_TIME = "extra_start_time"
+        const val EXTRA_GOAL_DISTANCE_METERS = "extra_goal_distance_meters"
+        const val EXTRA_GOAL_DURATION_MS = "extra_goal_duration_ms"
         const val CHANNEL_ID = "orun_tracking"
         private const val NOTIFICATION_ID = 1
 
@@ -62,6 +64,9 @@ class LocationTrackingService : Service() {
     private var splitBoundaryMeters: Float = 0f
     private var splitBoundaryTimeMs: Long = 0L
     private var isMetric: Boolean = true
+    private var goalDistanceMeters: Float? = null
+    private var goalDurationMs: Long? = null
+    private var prefsListener: android.content.SharedPreferences.OnSharedPreferenceChangeListener? = null
 
     override fun onCreate() {
         super.onCreate()
@@ -83,6 +88,11 @@ class LocationTrackingService : Service() {
                 distanceMeters = 0f; elevationGainMeters = 0f; elevationLossMeters = 0f
                 paceBuffer.clear(); lastSavedLocation = null; lastAltitude = null
 
+                goalDistanceMeters = if (intent.hasExtra(EXTRA_GOAL_DISTANCE_METERS))
+                    intent.getFloatExtra(EXTRA_GOAL_DISTANCE_METERS, 0f) else null
+                goalDurationMs = if (intent.hasExtra(EXTRA_GOAL_DURATION_MS))
+                    intent.getLongExtra(EXTRA_GOAL_DURATION_MS, 0L) else null
+
                 // Voiceover
                 voiceoverEnabled = VoiceoverPreference.isEnabled(this)
                 isMetric = UnitPreference.isMetric(this)
@@ -90,6 +100,18 @@ class LocationTrackingService : Service() {
                 nextAnnouncementMeters = announceIntervalMeters
                 splitBoundaryMeters = 0f
                 splitBoundaryTimeMs = startTime
+
+                // Listen for settings changes during the run
+                prefsListener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, _ ->
+                    voiceoverEnabled = VoiceoverPreference.isEnabled(this)
+                    isMetric = UnitPreference.isMetric(this)
+                    announceIntervalMeters = intervalIndexToMeters(
+                        VoiceoverPreference.getIntervalIndex(this), isMetric
+                    )
+                    // nextAnnouncementMeters not reset — avoids immediately re-triggering
+                }
+                getSharedPreferences("orun_prefs", MODE_PRIVATE)
+                    .registerOnSharedPreferenceChangeListener(prefsListener)
 
                 startForeground(NOTIFICATION_ID, buildNotification())
                 startLocationUpdates()
@@ -269,6 +291,43 @@ class LocationTrackingService : Service() {
         if (VoiceoverPreference.getStatSplitElevation(this)) {
             parts.add("Elevation gain ${formatElevationSpoken(snapshot.elevationGainMeters, isMetric)}")
         }
+        val announceGoalPct = VoiceoverPreference.getStatGoalPercent(this)
+        val announceGoalEta = VoiceoverPreference.getStatGoalEta(this)
+        if (announceGoalPct || announceGoalEta) {
+            val elapsedMs = System.currentTimeMillis() - snapshot.startTime
+            val gDist = goalDistanceMeters
+            val gDur = goalDurationMs
+            when {
+                gDist != null && gDist > 0f -> {
+                    val pct = ((snapshot.distanceMeters / gDist) * 100).toInt().coerceIn(0, 100)
+                    val remainingMeters = (gDist - snapshot.distanceMeters).coerceAtLeast(0f)
+                    if (remainingMeters <= 0f) {
+                        parts.add("Goal reached")
+                    } else {
+                        if (announceGoalPct) parts.add("Goal $pct percent")
+                        if (announceGoalEta && snapshot.currentPaceSecPerKm > 0f) {
+                            val remSec = (snapshot.currentPaceSecPerKm * remainingMeters / 1000f).toLong()
+                            val totalSec = (System.currentTimeMillis() - snapshot.startTime) / 1000L + remSec
+                            parts.add("Estimated time ${formatDurationSpoken(totalSec)}")
+                        }
+                    }
+                }
+                gDur != null && gDur > 0L -> {
+                    val pct = ((elapsedMs.toFloat() / gDur) * 100).toInt().coerceIn(0, 100)
+                    val remainingMs = (gDur - elapsedMs).coerceAtLeast(0L)
+                    if (remainingMs <= 0L) {
+                        parts.add("Goal reached")
+                    } else {
+                        if (announceGoalPct) parts.add("Goal $pct percent")
+                        if (announceGoalEta && snapshot.currentPaceSecPerKm > 0f) {
+                            val remSec = remainingMs / 1000f
+                            val estMeters = remSec / snapshot.currentPaceSecPerKm * 1000f
+                            parts.add("Estimated distance ${formatDistanceSpoken(snapshot.distanceMeters + estMeters, isMetric)}")
+                        }
+                    }
+                }
+            }
+        }
 
         if (parts.isNotEmpty()) {
             tts?.speak(parts.joinToString(". "), TextToSpeech.QUEUE_FLUSH, null, null)
@@ -313,6 +372,10 @@ class LocationTrackingService : Service() {
         else "%.2f miles".format(meters / 1609.344f)
 
     override fun onDestroy() {
+        prefsListener?.let {
+            getSharedPreferences("orun_prefs", MODE_PRIVATE)
+                .unregisterOnSharedPreferenceChangeListener(it)
+        }
         stopLocationUpdates()
         tts?.stop()
         tts?.shutdown()

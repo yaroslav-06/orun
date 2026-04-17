@@ -60,6 +60,7 @@ class RunGoalSetupActivity : AppCompatActivity() {
         val llChipsContainer = findViewById<LinearLayout>(R.id.llChipsContainer)
         val hsvDistanceChips = findViewById<View>(R.id.hsvDistanceChips)
         val hsvDurationChips = findViewById<View>(R.id.hsvDurationChips)
+        val vSpacer = findViewById<View>(R.id.vSpacer)
 
         val etDistanceGoal = findViewById<EditText>(R.id.etDistanceGoal)
         val tvDistanceUnit = findViewById<TextView>(R.id.tvDistanceUnit)
@@ -161,6 +162,7 @@ class RunGoalSetupActivity : AppCompatActivity() {
                     llChipsContainer.visibility = View.VISIBLE
                     hsvDistanceChips.visibility = View.VISIBLE
                     hsvDurationChips.visibility = View.GONE
+                    vSpacer.visibility = View.VISIBLE
                     etDistanceGoal.requestFocus()
                     showKeyboard(etDistanceGoal)
                 }
@@ -171,6 +173,7 @@ class RunGoalSetupActivity : AppCompatActivity() {
                     llChipsContainer.visibility = View.VISIBLE
                     hsvDistanceChips.visibility = View.GONE
                     hsvDurationChips.visibility = View.VISIBLE
+                    vSpacer.visibility = View.VISIBLE
                     etDurationInput.requestFocus()
                     showKeyboard(etDurationInput)
                 }
@@ -179,6 +182,7 @@ class RunGoalSetupActivity : AppCompatActivity() {
                     llDistanceContainer.visibility = View.GONE
                     llDurationContainer.visibility = View.GONE
                     llChipsContainer.visibility = View.GONE
+                    vSpacer.visibility = View.GONE
                     hideKeyboard()
                 }
             }
