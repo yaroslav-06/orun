@@ -2,6 +2,8 @@
 
 An Android app for tracking outdoor runs with GPS, real-time metrics, voice announcements, and personal records.
 
+Used to get 3:27 marathon time in Go STL!
+
 ---
 
 ## Demo
